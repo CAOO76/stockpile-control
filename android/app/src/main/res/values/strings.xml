@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Stockpile Control</string>
+    <string name="title_activity_main">Stockpile Control</string>
+    <string name="package_name">com.minreport.stockpilecontrol</string>
+    <string name="custom_url_scheme">com.minreport.stockpilecontrol</string>
+</resources>

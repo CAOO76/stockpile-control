@@ -7,9 +7,14 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:sync": "npx cap sync",
+    "android:open": "npx cap open android",
+    "android:dev": "npx cap sync && npx cap open android && vite --host",
+    "android:apk": "cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.2",
     "@capacitor/core": "^8.0.2",
     "@capacitor/geolocation": "^8.0.0",
     "@capacitor/motion": "^8.0.0",
@@ -21,6 +26,7 @@
     "three": "^0.182.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.4.5",
     "@eslint/js": "^9.39.1",
     "@originjs/vite-plugin-federation": "^1.4.1",
     "@types/node": "^24.10.1",
