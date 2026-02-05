@@ -18,7 +18,7 @@ export default defineConfig({
         './Plugin': './src/plugin.ts',
         './App': './src/App.tsx',
       },
-      shared: ['react', 'react-dom'],
+      shared: ['react', 'react-dom', 'firebase/app', 'firebase/firestore', 'firebase/storage', '@capacitor/core', 'framer-motion'],
     }),
   ],
   build: {

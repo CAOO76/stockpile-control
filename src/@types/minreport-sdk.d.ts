@@ -1,4 +1,4 @@
-// Definiciones TypeScript para el SDK de MINREPORT v1.0.3
+// Definiciones TypeScript para el SDK de MINREPORT v1.0.5
 // Basado en la especificación del SDK
 
 declare module '@minreport/sdk' {
@@ -65,11 +65,29 @@ declare module '@minreport/sdk' {
     }
 
     /**
+     * Core API
+     */
+    export interface CoreAPI {
+        getPluginRegistry(): {
+            getPlugin(name: string): any;
+        };
+    }
+
+    /**
      * Utilidades del SDK
      */
     export const SDK: {
         version: string;
         getContext(): PluginContext;
         registerPlugin(config: PluginConfig, lifecycle: PluginLifeCycle): void;
+    };
+
+    /**
+     * MinReport Global Object
+     */
+    export const MinReport: {
+        Data: any;
+        EntityManager: any;
+        Core: CoreAPI;
     };
 }

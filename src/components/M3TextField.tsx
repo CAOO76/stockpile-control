@@ -1,11 +1,4 @@
-/**
- * M3TextField Component
- * Material Design 3 Text Field con autocomplete='off' obligatorio
- * Para formularios de campo con seguridad de inputs
- */
-
 import React from 'react';
-import './M3TextField.css';
 
 export interface M3TextFieldProps {
     label: string;
@@ -34,36 +27,43 @@ export const M3TextField: React.FC<M3TextFieldProps> = ({
     const hasValue = value.length > 0;
 
     return (
-        <div className="m3-text-field-container">
-            <div className={`m3-text-field ${hasError ? 'error' : ''} ${disabled ? 'disabled' : ''}`}>
+        <div className="m3-text-field-container w-full my-4">
+            <div className={`m3-text-field relative flex flex-col w-full ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}>
                 <input
                     type={type}
-                    className="m3-text-field-input"
+                    className={`m3-text-field-input w-full h-14 pt-5 pb-1 px-4 text-base 
+                        bg-antigravity-light-surface dark:bg-antigravity-dark-surface 
+                        text-antigravity-light-text dark:text-antigravity-dark-text 
+                        rounded-t border-b transition-all duration-200 outline-none
+                        ${hasError
+                            ? 'border-red-500'
+                            : 'border-antigravity-light-border dark:border-antigravity-dark-border focus:border-antigravity-accent'
+                        }`}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder || ' '}
                     required={required}
                     disabled={disabled}
-                    autoComplete="off" // OBLIGATORIO - Seguridad de inputs
+                    autoComplete="off"
                     aria-label={label}
                     aria-invalid={hasError}
-                    aria-describedby={error ? `${label}-error` : undefined}
                 />
-                <label className={`m3-text-field-label ${hasValue ? 'filled' : ''}`}>
+                <label className={`m3-text-field-label absolute left-4 pointer-events-none transition-all duration-200
+                    ${(hasValue || placeholder) ? 'top-2 text-xs scale-90' : 'top-4 text-base'}
+                    ${hasError ? 'text-red-500' : 'text-antigravity-light-muted dark:text-antigravity-dark-muted focus-within:text-antigravity-accent'}`}>
                     {label}
-                    {required && <span className="required-indicator"> *</span>}
+                    {required && <span className="text-red-500 ml-1">*</span>}
                 </label>
-                <div className="m3-text-field-underline"></div>
             </div>
 
             {error && (
-                <div id={`${label}-error`} className="m3-text-field-error">
-                    {error}
+                <div className="m3-text-field-error mt-1 text-xs text-red-500 px-4 flex items-center gap-1">
+                    <span className="material-symbols-rounded text-sm">error</span> {error}
                 </div>
             )}
 
             {helperText && !error && (
-                <div className="m3-text-field-helper">
+                <div className="m3-text-field-helper mt-1 text-xs text-antigravity-light-muted dark:text-antigravity-dark-muted px-4">
                     {helperText}
                 </div>
             )}

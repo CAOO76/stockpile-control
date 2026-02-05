@@ -130,7 +130,22 @@ export const MinReport = {
             console.log(`[MinReport.EntityManager] Suscrito a ${extension}.${entityId}`);
             // TODO: Implementación real de suscripción (ej: Firestore snapshot)
             return () => console.log(`[MinReport.EntityManager] Desuscrito de ${extension}.${entityId}`);
-        }
+        },
+        /**
+         * Core API
+         * Funcionalidades base del sistema
+         */
+        Core: {
+            getPluginRegistry: () => {
+                console.log('[MinReport.Core] Obteniendo registro de plugins');
+                return {
+                    getPlugin: (name: string) => {
+                        console.log(`[MinReport.Core] Buscando plugin: ${name}`);
+                        return null;
+                    }
+                };
+            }
+        },
     },
 };
 
@@ -138,13 +153,13 @@ export const MinReport = {
  * SDK principal de MINREPORT
  */
 export const SDK = {
-    version: '1.0.3',
+    version: '1.0.5',
 
     getContext(): PluginContext {
         return {
             region: import.meta.env.VITE_MINREPORT_REGION || 'southamerica-west1',
             pluginName: import.meta.env.VITE_PLUGIN_NAME || 'stockpile-control',
-            version: import.meta.env.VITE_PLUGIN_VERSION || '1.0.0',
+            version: import.meta.env.VITE_PLUGIN_VERSION || '1.0.5',
             environment: (import.meta.env.VITE_ENVIRONMENT as any) || 'development',
         };
     },

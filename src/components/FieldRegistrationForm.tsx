@@ -8,9 +8,9 @@ import React, { useState } from 'react';
 import { M3TextField } from './M3TextField';
 import { M3Switch } from './M3Switch';
 import { SDKButton } from './SDKButton';
-import { stockpileControlPlugin } from '../plugin';
+import stockpileControlPlugin from '../plugin';
 import type { StockpileData } from '../services/DataService';
-import './FieldRegistrationForm.css';
+// Los estilos se gestionan ahora vía Tailwind CSS en index.css
 
 interface FieldRegistrationFormProps {
     onSuccess: (stockpileId: string) => void;
@@ -133,13 +133,15 @@ export const FieldRegistrationForm: React.FC<FieldRegistrationFormProps> = ({ on
     };
 
     return (
-        <div className="field-registration-form">
-            <div className="form-header">
-                <h2 className="form-title">📋 Registro de Terreno</h2>
-                <p className="form-subtitle">Complete los datos del acopio para iniciar el escaneo de volumen</p>
+        <div className="field-registration-form bg-antigravity-light-bg dark:bg-antigravity-dark-bg text-antigravity-light-text dark:text-antigravity-dark-text min-h-screen p-6 transition-colors duration-200">
+            <div className="form-header mb-8 text-center">
+                <h2 className="form-title text-2xl font-bold flex items-center justify-center gap-2 mb-2">
+                    <span className="material-symbols-rounded">content_paste</span> Registro de Terreno
+                </h2>
+                <p className="form-subtitle text-antigravity-light-muted dark:text-antigravity-dark-muted">Complete los datos del acopio para iniciar el escaneo de volumen</p>
             </div>
 
-            <form autoComplete="off" onSubmit={(e) => e.preventDefault()}>
+            <form autoComplete="off" className="space-y-4 max-w-lg mx-auto" onSubmit={(e) => e.preventDefault()}>
                 <M3TextField
                     label="Nombre del Sitio"
                     value={formData.siteName}
@@ -184,37 +186,50 @@ export const FieldRegistrationForm: React.FC<FieldRegistrationFormProps> = ({ on
                     helperText="Observaciones o comentarios opcionales"
                 />
 
-                <M3Switch
-                    label="Habilitar Georeferenciación"
-                    checked={geoEnabled}
-                    onChange={handleGeoToggle}
-                />
+                <div className="bg-antigravity-light-surface dark:bg-antigravity-dark-surface p-4 rounded-lg border border-antigravity-light-border dark:border-antigravity-dark-border">
+                    <M3Switch
+                        label="Habilitar Georeferenciación"
+                        checked={geoEnabled}
+                        onChange={handleGeoToggle}
+                    />
 
-                {geoEnabled && coordinates && (
-                    <div className="coordinates-display">
-                        <span className="coordinates-label">📍 Ubicación:</span>
-                        <span className="coordinates-value">
-                            {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
-                        </span>
+                    {geoEnabled && coordinates && (
+                        <div className="coordinates-display mt-3 flex items-center gap-2 text-sm font-mono text-antigravity-accent bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+                            <span className="material-symbols-rounded text-lg">location_on</span>
+                            <span>
+                                {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {errors.geo && (
+                    <div className="form-error text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <span className="material-symbols-rounded text-sm">error</span> {errors.geo}
                     </div>
                 )}
 
-                {errors.geo && (
-                    <div className="form-error">{errors.geo}</div>
-                )}
-
                 {errors.scan && (
-                    <div className="form-error">{errors.scan}</div>
+                    <div className="form-error text-red-500 text-xs mt-1 flex items-center gap-1">
+                        <span className="material-symbols-rounded text-sm">error</span> {errors.scan}
+                    </div>
                 )}
 
-                <div className="form-actions">
+                <div className="form-actions mt-8">
                     <SDKButton
                         variant="primary"
                         onClick={handleStartScan}
                         disabled={isScanning}
                         fullWidth
                     >
-                        {isScanning ? '🔄 Escaneando...' : '🔍 Iniciar Escaneo de Volumen'}
+                        <div className="flex items-center justify-center gap-2">
+                            {isScanning ? (
+                                <span className="material-symbols-rounded animate-spin">refresh</span>
+                            ) : (
+                                <span className="material-symbols-rounded">search</span>
+                            )}
+                            {isScanning ? 'Escaneando...' : 'Iniciar Escaneo de Volumen'}
+                        </div>
                     </SDKButton>
                 </div>
             </form>

@@ -10,8 +10,7 @@ import { FieldRegistrationForm } from './components/FieldRegistrationForm';
 import { ResultsDashboard } from './components/ResultsDashboard';
 import { dataService, type StockpileData } from './services/DataService';
 import { connectivityMonitor } from './utils/offline';
-import './styles/m3-theme.css';
-import './App.css';
+// Los estilos se gestionan ahora vía Tailwind CSS en index.css
 
 type ViewState = 'capture' | 'dashboard';
 
@@ -54,21 +53,30 @@ function App() {
   };
 
   return (
-    <div className="app">
+    <div className="app bg-antigravity-light-bg dark:bg-antigravity-dark-bg text-antigravity-light-text dark:text-antigravity-dark-text min-h-screen flex flex-col transition-colors duration-200 font-sans">
       {/* Header con navegación */}
-      <header className="app-header">
-        <div className="header-content">
-          <h1 className="app-title">🏗️ Stockpile Control</h1>
+      <header className="app-header bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-b border-antigravity-light-border dark:border-antigravity-dark-border sticky top-0 z-[100]">
+        <div className="header-content max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <h1 className="app-title text-2xl font-bold flex items-center gap-2">
+            <span className="material-symbols-rounded text-antigravity-accent">precision_manufacturing</span> Stockpile Control
+          </h1>
 
-          <nav className="app-nav">
+          <nav className="app-nav flex gap-2">
             <button
-              className={`nav-button ${view === 'capture' ? 'active' : ''}`}
+              className={`nav-button px-4 py-2 rounded-lg font-medium transition-all duration-200 border
+                                ${view === 'capture'
+                  ? 'bg-antigravity-accent text-white border-antigravity-accent'
+                  : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}`}
               onClick={() => setView('capture')}
             >
               Captura
             </button>
             <button
-              className={`nav-button ${view === 'dashboard' ? 'active' : ''}`}
+              className={`nav-button px-4 py-2 rounded-lg font-medium transition-all duration-200 border
+                                ${view === 'dashboard'
+                  ? 'bg-antigravity-accent text-white border-antigravity-accent'
+                  : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}
+                                disabled:opacity-30 disabled:cursor-not-allowed`}
               onClick={() => setView('dashboard')}
               disabled={!currentStockpile}
             >
@@ -77,14 +85,18 @@ function App() {
           </nav>
 
           {/* Indicador de conectividad */}
-          <div className={`connectivity-indicator ${isOnline ? 'online' : 'offline'}`}>
-            {isOnline ? '🟢 Online' : '🔴 Offline'}
+          <div className={`connectivity-indicator px-3 py-1 rounded text-xs font-bold uppercase tracking-wider flex items-center gap-1.5
+                        ${isOnline
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+              : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+            <span className="material-symbols-rounded text-[14px]">{isOnline ? 'wifi' : 'wifi_off'}</span>
+            {isOnline ? 'Online' : 'Offline'}
           </div>
         </div>
       </header>
 
       {/* Contenido principal con transiciones animadas */}
-      <main className="app-main">
+      <main className="app-main flex-1 max-w-[1200px] w-full mx-auto px-4 py-8">
         <AnimatePresence mode="wait">
           {view === 'capture' ? (
             <motion.div
@@ -116,14 +128,16 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="app-footer">
-        <p className="footer-text">
-          Plugin Stockpile Control v1.0.0 | Región: southamerica-west1 |
-          <span className="footer-warning"> ⛔ App Engine Prohibido</span>
+      <footer className="app-footer bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-t border-antigravity-light-border dark:border-antigravity-dark-border py-6 text-center">
+        <p className="footer-text text-xs text-antigravity-light-muted dark:text-antigravity-dark-muted">
+          Plugin Stockpile Control v1.0.5 | Región: southamerica-west1 |
+          <span className="text-red-500 font-bold ml-2 flex inline-items items-center gap-1 justify-center">
+            <span className="material-symbols-rounded text-sm">block</span> App Engine Prohibido
+          </span>
         </p>
       </footer>
     </div>
   );
-}
+};
 
 export default App;

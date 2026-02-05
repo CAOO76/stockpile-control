@@ -15,7 +15,7 @@ export class StockpileControlPlugin implements PluginLifeCycle {
     constructor() {
         this.config = {
             name: 'stockpile-control',
-            version: '1.0.0',
+            version: '1.0.5',
             description: 'Plugin de control y monitoreo de stockpile para MINREPORT',
             author: 'MINREPORT Team',
         };
@@ -146,5 +146,5 @@ export class StockpileControlPlugin implements PluginLifeCycle {
     }
 }
 
-// Exportar instancia única del plugin
-export const stockpileControlPlugin = new StockpileControlPlugin();
+// Exportar instancia única del plugin por defecto (MANDATORIO)
+export default new StockpileControlPlugin();
