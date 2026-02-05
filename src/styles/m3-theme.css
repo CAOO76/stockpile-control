@@ -1,0 +1,181 @@
+/**
+ * Material Design 3 Theme
+ * Flat Design - Sin degradados, colores sólidos, sombras planas
+ * Región: southamerica-west1
+ */
+
+:root {
+    /* ============================================ */
+    /* TIPOGRAFÍA - Atkinson Hyperlegible         */
+    /* ============================================ */
+    font-family: 'Atkinson Hyperlegible', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* ============================================ */
+    /* M3 COLOR SYSTEM - Flat Design              */
+    /* ============================================ */
+
+    /* Primary */
+    --md-sys-color-primary: #1565C0;
+    --md-sys-color-on-primary: #FFFFFF;
+    --md-sys-color-primary-container: #BBDEFB;
+    --md-sys-color-on-primary-container: #0D47A1;
+
+    /* Secondary */
+    --md-sys-color-secondary: #455A64;
+    --md-sys-color-on-secondary: #FFFFFF;
+    --md-sys-color-secondary-container: #CFD8DC;
+    --md-sys-color-on-secondary-container: #263238;
+
+    /* Tertiary */
+    --md-sys-color-tertiary: #00897B;
+    --md-sys-color-on-tertiary: #FFFFFF;
+    --md-sys-color-tertiary-container: #B2DFDB;
+    --md-sys-color-on-tertiary-container: #004D40;
+
+    /* Error */
+    --md-sys-color-error: #C62828;
+    --md-sys-color-on-error: #FFFFFF;
+    --md-sys-color-error-container: #FFCDD2;
+    --md-sys-color-on-error-container: #B71C1C;
+
+    /* Surface */
+    --md-sys-color-surface: #FAFAFA;
+    --md-sys-color-on-surface: #212121;
+    --md-sys-color-surface-variant: #E0E0E0;
+    --md-sys-color-on-surface-variant: #424242;
+
+    /* Background */
+    --md-sys-color-background: #F5F5F5;
+    --md-sys-color-on-background: #212121;
+
+    /* Outline */
+    --md-sys-color-outline: #9E9E9E;
+    --md-sys-color-outline-variant: #BDBDBD;
+
+    /* ============================================ */
+    /* M3 ELEVATION - Flat Design (sin sombras)   */
+    /* ============================================ */
+
+    --md-sys-elevation-0: none;
+    --md-sys-elevation-1: 0px 1px 0px rgba(0, 0, 0, 0.08);
+    --md-sys-elevation-2: 0px 2px 0px rgba(0, 0, 0, 0.12);
+    --md-sys-elevation-3: 0px 3px 0px rgba(0, 0, 0, 0.16);
+
+    /* ============================================ */
+    /* M3 TYPOGRAPHY SCALE                        */
+    /* ============================================ */
+
+    --md-sys-typescale-display-large: 700 57px/64px 'Atkinson Hyperlegible';
+    --md-sys-typescale-display-medium: 700 45px/52px 'Atkinson Hyperlegible';
+    --md-sys-typescale-display-small: 700 36px/44px 'Atkinson Hyperlegible';
+
+    --md-sys-typescale-headline-large: 700 32px/40px 'Atkinson Hyperlegible';
+    --md-sys-typescale-headline-medium: 700 28px/36px 'Atkinson Hyperlegible';
+    --md-sys-typescale-headline-small: 700 24px/32px 'Atkinson Hyperlegible';
+
+    --md-sys-typescale-title-large: 700 22px/28px 'Atkinson Hyperlegible';
+    --md-sys-typescale-title-medium: 700 16px/24px 'Atkinson Hyperlegible';
+    --md-sys-typescale-title-small: 700 14px/20px 'Atkinson Hyperlegible';
+
+    --md-sys-typescale-body-large: 400 16px/24px 'Atkinson Hyperlegible';
+    --md-sys-typescale-body-medium: 400 14px/20px 'Atkinson Hyperlegible';
+    --md-sys-typescale-body-small: 400 12px/16px 'Atkinson Hyperlegible';
+
+    --md-sys-typescale-label-large: 700 14px/20px 'Atkinson Hyperlegible';
+    --md-sys-typescale-label-medium: 700 12px/16px 'Atkinson Hyperlegible';
+    --md-sys-typescale-label-small: 700 11px/16px 'Atkinson Hyperlegible';
+
+    /* ============================================ */
+    /* M3 SHAPE                                   */
+    /* ============================================ */
+
+    --md-sys-shape-corner-none: 0px;
+    --md-sys-shape-corner-extra-small: 4px;
+    --md-sys-shape-corner-small: 8px;
+    --md-sys-shape-corner-medium: 12px;
+    --md-sys-shape-corner-large: 16px;
+    --md-sys-shape-corner-extra-large: 28px;
+
+    /* ============================================ */
+    /* M3 STATE LAYERS (Flat Design)              */
+    /* ============================================ */
+
+    --md-sys-state-hover-opacity: 0.08;
+    --md-sys-state-focus-opacity: 0.12;
+    --md-sys-state-pressed-opacity: 0.16;
+    --md-sys-state-dragged-opacity: 0.16;
+
+    /* ============================================ */
+    /* SPACING SYSTEM                             */
+    /* ============================================ */
+
+    --md-sys-spacing-0: 0px;
+    --md-sys-spacing-1: 4px;
+    --md-sys-spacing-2: 8px;
+    --md-sys-spacing-3: 12px;
+    --md-sys-spacing-4: 16px;
+    --md-sys-spacing-5: 20px;
+    --md-sys-spacing-6: 24px;
+    --md-sys-spacing-8: 32px;
+    --md-sys-spacing-10: 40px;
+    --md-sys-spacing-12: 48px;
+}
+
+/* ============================================ */
+/* GLOBAL RESETS                              */
+/* ============================================ */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font: var(--md-sys-typescale-body-large);
+    color: var(--md-sys-color-on-background);
+    background-color: var(--md-sys-color-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================ */
+/* M3 COMPONENT BASE CLASSES                  */
+/* ============================================ */
+
+.md3-surface {
+    background-color: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
+    border-radius: var(--md-sys-shape-corner-medium);
+}
+
+.md3-card {
+    background-color: var(--md-sys-color-surface);
+    border: 1px solid var(--md-sys-color-outline-variant);
+    border-radius: var(--md-sys-shape-corner-medium);
+    padding: var(--md-sys-spacing-4);
+}
+
+/* ============================================ */
+/* UTILITY CLASSES                            */
+/* ============================================ */
+
+.text-display-large {
+    font: var(--md-sys-typescale-display-large);
+}
+
+.text-headline-large {
+    font: var(--md-sys-typescale-headline-large);
+}
+
+.text-title-large {
+    font: var(--md-sys-typescale-title-large);
+}
+
+.text-body-large {
+    font: var(--md-sys-typescale-body-large);
+}
+
+.text-label-large {
+    font: var(--md-sys-typescale-label-large);
+}
