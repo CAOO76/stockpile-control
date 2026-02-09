@@ -8,7 +8,7 @@
  * cuando hay conexión disponible
  */
 
-import { MinReport } from '../lib/minreport-sdk-mock';
+import type { SecureContext, StockpileAsset } from '@minreport/sdk';
 import { getDb } from '../config/firebase.config';
 import {
     collection,
@@ -23,32 +23,48 @@ import {
 } from 'firebase/firestore';
 
 /**
- * Interfaz para datos de stockpile (acopio)
+ * Interfaz para datos de stockpile (acopio) compatibles con StockpileAsset de SDK 2.0.0
  */
-export interface StockpileData {
+export interface StockpileData extends Partial<StockpileAsset> {
     id?: string;
     name: string;
-    volume: number;
     location: {
         lat: number;
         lng: number;
     };
     timestamp: number;
     imageUrls?: string[];
-    metadata?: Record<string, any>;
+    peso_romana?: number;
+    factor_real?: number;
+    geometry_type?: string;
+    volumen?: number;
+    density_factor?: number;
+    weight_t?: number;
+    dimensions?: { base_m: number; height_m: number }; // Añadido
+    metadata?: any;
 }
 
 /**
  * Servicio de datos para el plugin stockpile-control
+ * Refactorizado para SDK 2.0.0: Utiliza SecureContext para persistencia blindada.
  */
 export class DataService {
-    private readonly EXTENSION_NAME = 'stockpile-control';
     private readonly COLLECTION_NAME = 'stockpile-data';
     private db = getDb();
+    private secureContext: SecureContext | null = null;
 
     /**
-     * Guardar datos de stockpile usando MinReport.Data.extendEntity
-     * Los datos se guardan en extensions.stockpile-control
+     * Inyecta el contexto seguro del SDK 2.0.0
+     * @param context Contexto proporcionado por MINREPORT en onInit
+     */
+    public setSecureContext(context: SecureContext): void {
+        this.secureContext = context;
+        console.log('[DataService] SecureContext inyectado correctamente.');
+    }
+
+    /**
+     * Guardar datos de stockpile usando SecureContext.storage.write
+     * Los datos se guardan con ámbito a extensions.stockpile-control
      * 
      * OFFLINE FIRST: Los datos se guardan localmente y se sincronizan automáticamente
      * 
@@ -61,17 +77,19 @@ export class DataService {
         entityId?: string
     ): Promise<string> {
         try {
-            console.log(`[DataService] Guardando datos en extensions.${this.EXTENSION_NAME}`);
+            console.log(`[DataService] Guardando datos blindados via SecureContext.storage`);
 
-            // Usar MinReport.Data.extendEntity para guardar en la extensión
-            await MinReport.Data.extendEntity({
-                extension: this.EXTENSION_NAME,
-                data: data,
-                entityId: entityId,
-            });
-
-            // También guardar en Firestore local para persistencia offline
             const docId = entityId || `stockpile_${Date.now()}`;
+
+            // 1. Persistencia blindada via SDK (Reemplaza MinReport.Data.extendEntity)
+            if (this.secureContext) {
+                await this.secureContext.storage.write(docId, data);
+                console.log(`[DataService] Datos escritos en almacenamiento blindado: ${docId}`);
+            } else {
+                console.warn('[DataService] SecureContext no disponible. Los datos no se persistirán vía SDK.');
+            }
+
+            // 2. Persistencia en Firestore local para soporte Offline First del plugin
             const dataWithId = { ...data, id: docId };
 
             await setDoc(
@@ -79,11 +97,11 @@ export class DataService {
                 {
                     ...dataWithId,
                     savedAt: new Date().toISOString(),
-                    synced: false, // Se marca como true cuando se sincroniza con MINREPORT
+                    synced: !!this.secureContext, // Se marca como sincronizado si el SDK lo aceptó
                 }
             );
 
-            console.log(`✅ Datos guardados correctamente: ${docId}`);
+            console.log(`✅ Registro de acopio persistido correctamente: ${docId}`);
             return docId;
         } catch (error) {
             console.error('❌ Error guardando datos:', error);
@@ -92,10 +110,7 @@ export class DataService {
     }
 
     /**
-     * Obtener datos de stockpile por ID
-     * 
-     * @param id - ID del stockpile
-     * @returns Promise con los datos del stockpile
+     * Obtener datos de stockpile por ID (desde Firestore local)
      */
     async getStockpileData(id: string): Promise<StockpileData | null> {
         try {
@@ -104,6 +119,12 @@ export class DataService {
 
             if (docSnap.exists()) {
                 return docSnap.data() as StockpileData;
+            }
+
+            // Si no está en Firestore, intentar leer desde el almacenamiento blindado del SDK
+            if (this.secureContext) {
+                const sdkData = await this.secureContext.storage.read<StockpileData>(id);
+                if (sdkData) return sdkData;
             }
 
             console.warn(`⚠️ Stockpile no encontrado: ${id}`);
@@ -115,21 +136,12 @@ export class DataService {
     }
 
     /**
-     * Obtener todos los stockpiles
-     * 
-     * @returns Promise con array de stockpiles
+     * Obtener todos los stockpiles de la base local
      */
     async getAllStockpiles(): Promise<StockpileData[]> {
         try {
             const querySnapshot = await getDocs(collection(this.db, this.COLLECTION_NAME));
-            const stockpiles: StockpileData[] = [];
-
-            querySnapshot.forEach((doc) => {
-                stockpiles.push(doc.data() as StockpileData);
-            });
-
-            console.log(`✅ Obtenidos ${stockpiles.length} stockpiles`);
-            return stockpiles;
+            return querySnapshot.docs.map(doc => doc.data() as StockpileData);
         } catch (error) {
             console.error('❌ Error obteniendo stockpiles:', error);
             throw error;
@@ -137,10 +149,7 @@ export class DataService {
     }
 
     /**
-     * Buscar stockpiles por criterios
-     * 
-     * @param filters - Filtros de búsqueda
-     * @returns Promise con array de stockpiles filtrados
+     * Buscar stockpiles por criterios en base local
      */
     async searchStockpiles(filters: {
         minVolume?: number;
@@ -151,11 +160,11 @@ export class DataService {
             let q = query(collection(this.db, this.COLLECTION_NAME));
 
             if (filters.minVolume !== undefined) {
-                q = query(q, where('volume', '>=', filters.minVolume));
+                q = query(q, where('volumen', '>=', filters.minVolume));
             }
 
             if (filters.maxVolume !== undefined) {
-                q = query(q, where('volume', '<=', filters.maxVolume));
+                q = query(q, where('volumen', '<=', filters.maxVolume));
             }
 
             if (filters.name) {
@@ -163,13 +172,7 @@ export class DataService {
             }
 
             const querySnapshot = await getDocs(q);
-            const stockpiles: StockpileData[] = [];
-
-            querySnapshot.forEach((doc) => {
-                stockpiles.push(doc.data() as StockpileData);
-            });
-
-            return stockpiles;
+            return querySnapshot.docs.map(doc => doc.data() as StockpileData);
         } catch (error) {
             console.error('❌ Error en búsqueda:', error);
             throw error;
@@ -177,11 +180,7 @@ export class DataService {
     }
 
     /**
-     * Suscribirse a cambios en tiempo real de un stockpile
-     * 
-     * @param id - ID del stockpile
-     * @param callback - Función a ejecutar cuando hay cambios
-     * @returns Función para cancelar la suscripción
+     * Suscribirse a cambios en tiempo real
      */
     subscribeToStockpile(
         id: string,
@@ -199,12 +198,16 @@ export class DataService {
     }
 
     /**
-     * Sincronizar datos locales con MINREPORT
-     * Marca los datos como sincronizados después de subirlos
+     * Sincronizar datos locales pendientes con el almacenamiento blindado del SDK
      */
     async syncWithMinReport(): Promise<void> {
+        if (!this.secureContext) {
+            console.warn('[DataService] Abortando sincronización: SecureContext no disponible.');
+            return;
+        }
+
         try {
-            console.log('[DataService] Sincronizando datos con MINREPORT...');
+            console.log('[DataService] Sincronizando datos locales con almacenamiento blindado...');
 
             const q = query(
                 collection(this.db, this.COLLECTION_NAME),
@@ -212,33 +215,86 @@ export class DataService {
             );
 
             const querySnapshot = await getDocs(q);
-            const syncPromises: Promise<void>[] = [];
 
-            querySnapshot.forEach((docSnapshot) => {
+            for (const docSnapshot of querySnapshot.docs) {
                 const data = docSnapshot.data() as StockpileData;
 
-                // Sincronizar cada documento no sincronizado
-                const syncPromise = MinReport.Data.extendEntity({
-                    extension: this.EXTENSION_NAME,
-                    data: data,
-                    entityId: docSnapshot.id,
-                }).then(() => {
-                    // Marcar como sincronizado
-                    return setDoc(
-                        doc(this.db, this.COLLECTION_NAME, docSnapshot.id),
-                        { synced: true },
-                        { merge: true }
-                    );
-                });
+                // Escribir en almacenamiento blindado
+                await this.secureContext.storage.write(docSnapshot.id, data);
 
-                syncPromises.push(syncPromise);
-            });
+                // Marcar como sincronizado localmente
+                await setDoc(
+                    doc(this.db, this.COLLECTION_NAME, docSnapshot.id),
+                    { synced: true },
+                    { merge: true }
+                );
+            }
 
-            await Promise.all(syncPromises);
-            console.log(`✅ Sincronizados ${syncPromises.length} registros con MINREPORT`);
+            console.log(`✅ Sincronizados ${querySnapshot.size} registros con MINREPORT SDK`);
         } catch (error) {
             console.error('❌ Error en sincronización:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Perfiles de Material: Guarda los factores de densidad globales calibrados por el admin.
+     * Estos se sincronizan con todos los dispositivos móviles.
+     */
+    async saveMaterialProfiles(profiles: Record<string, number>): Promise<void> {
+        try {
+            if (this.secureContext) {
+                await this.secureContext.storage.write('global_material_profiles', profiles);
+                console.log('[DataService] Perfiles de material actualizados globalmente.');
+            }
+
+            // Persistencia local para el dashboard reactivo
+            await setDoc(
+                doc(this.db, 'config', 'material-profiles'),
+                { ...profiles, updatedAt: new Date().toISOString() }
+            );
+        } catch (error) {
+            console.error('[DataService] Error guardando perfiles:', error);
+        }
+    }
+
+    /**
+     * Obtiene los perfiles de material (factores base) actuales.
+     */
+    async getMaterialProfiles(): Promise<Record<string, number>> {
+        const defaultProfiles = { 'COLPAS': 1.66, 'GRANSA': 1.78, 'MIXTO': 1.88, 'FINOS': 2.05 };
+        try {
+            if (this.secureContext) {
+                const sdkProfiles = await this.secureContext.storage.read<Record<string, number>>('global_material_profiles');
+                if (sdkProfiles) return sdkProfiles;
+            }
+
+            const docSnap = await getDoc(doc(this.db, 'config', 'material-profiles'));
+            return docSnap.exists() ? docSnap.data() as Record<string, number> : defaultProfiles;
+        } catch (error) {
+            return defaultProfiles;
+        }
+    }
+
+    /**
+     * Inteligencia Industrial: Obtiene los últimos factores reales para un tipo de granulometría.
+     */
+    async getLastFactorsByGranulometry(tipo: string, limit: number = 5): Promise<{ factor: number }[]> {
+        try {
+            const q = query(
+                collection(this.db, this.COLLECTION_NAME),
+                where('tipo_granulometria', '==', tipo),
+                where('peso_romana', '!=', null)
+            );
+
+            const querySnapshot = await getDocs(q);
+            const docs = querySnapshot.docs.map(doc => doc.data());
+            docs.sort((a, b) => b.timestamp - a.timestamp);
+
+            return docs.slice(0, limit).map(d => ({ factor: d.factor_real }));
+        } catch (error) {
+            console.error('[DataService] Error obteniendo historial de factores:', error);
+            return [];
         }
     }
 }

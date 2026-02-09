@@ -35,7 +35,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ stockpileDat
                         <span className="material-symbols-rounded text-4xl">inventory_2</span>
                     </div>
                     <div className="metric-label text-[10px] font-bold uppercase tracking-widest text-antigravity-light-muted dark:text-antigravity-dark-muted mb-1">Volumen</div>
-                    <div className="metric-value text-2xl font-bold text-antigravity-light-text dark:text-antigravity-dark-text">{stockpileData.volume.toLocaleString()} m³</div>
+                    <div className="metric-value text-2xl font-bold text-antigravity-light-text dark:text-antigravity-dark-text">{stockpileData.volumen?.toLocaleString() || 'N/A'} m³</div>
                 </div>
 
                 <div className="metric-card bg-antigravity-light-surface dark:bg-antigravity-dark-surface border border-antigravity-light-border dark:border-antigravity-dark-border rounded-xl p-6 text-center transition-all duration-200 hover:shadow-md">

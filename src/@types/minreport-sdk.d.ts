@@ -1,31 +1,53 @@
-// Definiciones TypeScript para el SDK de MINREPORT v1.0.5
-// Basado en la especificación del SDK
+// Definiciones TypeScript para el SDK de MINREPORT v2.0.0
+// Objetivo: Establecer el contrato técnico blindado y las definiciones del SDK 2.0.0.
 
 declare module '@minreport/sdk' {
     /**
-     * Interfaz del ciclo de vida del plugin
-     * Todos los plugins deben implementar esta interfaz
+     * Contexto seguro proporcionado al plugin durante la inicialización.
+     * Todas las operaciones de almacenamiento están bajo el ámbito de extensions.stockpile-control.
+     * Permite lectura de históricos para proyecciones de densidad en tiempo real.
      */
-    export interface PluginLifeCycle {
-        /**
-         * Se invoca cuando el plugin es activado en MINREPORT
-         */
-        onActivate(): void | Promise<void>;
+    export interface SecureContext {
+        storage: {
+            /**
+             * Lee un valor del almacenamiento persistente.
+             * Utilizado para obtener históricos y realizar inferencias.
+             * @param key Clave del dato a leer.
+             * @returns El valor almacenado o null si no existe.
+             */
+            read<T>(key: string): Promise<T | null>;
 
-        /**
-         * Se invoca cuando el plugin es desactivado en MINREPORT
-         */
-        onDeactivate(): void | Promise<void>;
+            /**
+             * Escribe un valor en el almacenamiento persistente.
+             * @param key Clave del dato a escribir.
+             * @param value Valor a almacenar.
+             */
+            write<T>(key: string, value: T): Promise<void>;
+        };
+    }
 
-        /**
-         * Se invoca cuando el plugin es inicializado (opcional)
-         */
-        onInit?(): void | Promise<void>;
+    export type Granulometry = 'COLPAS' | 'GRANSA' | 'FINOS' | 'MIXTO';
+    export type GeometryType = 'CONO_ELIPTICO' | 'CONO_ELIPTICO_TRUNCADO' | 'CONO_PERIMETRO' | 'FOTOGRAMETRIA';
 
-        /**
-         * Se invoca cuando el plugin recibe datos (opcional)
-         */
-        onData?(data: any): void | Promise<void>;
+    /**
+     * Definición de un activo (Asset) de acopio para Stockpile Control.
+     * Basado en el contrato técnico blindado de MINREPORT.
+     */
+    export interface StockpileAsset {
+        geometria: GeometryType;
+        medidas_crudas: Record<string, number>;
+        volumen: number;
+        tipo_granulometria: Granulometry;
+        factor_densidad_usado: number;
+        peso_final_toneladas: number;
+        metadata: {
+            timestamp: number;
+            geo: 'southamerica-west1';
+            precision: number;
+            operatorId: string;
+            metodo: 'manual' | 'foto';
+            factor_utilizado: number;
+        };
     }
 
     /**
@@ -49,22 +71,6 @@ declare module '@minreport/sdk' {
     }
 
     /**
-     * Metadatos de la versión del SDK
-     */
-    export interface SDKVersion {
-        id: string;
-        versionNumber: string;
-        changelog: string;
-        status: 'ALPHA' | 'BETA' | 'STABLE' | 'DEPRECATED';
-        createdBy: string;
-        author: string;
-        releaseDate: {
-            seconds: number;
-            nanoseconds: number;
-        };
-    }
-
-    /**
      * Core API
      */
     export interface CoreAPI {
@@ -84,9 +90,9 @@ declare module '@minreport/sdk' {
 
     /**
      * MinReport Global Object
+     * Se ha eliminado MinReport.Data para favorecer el uso de SecureContext.
      */
     export const MinReport: {
-        Data: any;
         EntityManager: any;
         Core: CoreAPI;
     };

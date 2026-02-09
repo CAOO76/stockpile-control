@@ -1,11 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /**
+ * Estilos para VisionAnalyzer
+ */
+.grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.8;
+}
+
+
+/**
  * Global Styles
  * Tipografía: Atkinson Hyperlegible (MANDATORIO)
  */
+
+/* Eliminada la clase .safe-area-container ya que el padding se aplica a #root */
 
 :root {
   font-family: 'Atkinson Hyperlegible', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -22,13 +44,26 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  font-family: 'Atkinson Hyperlegible', sans-serif !important;
+  font-size: 16px; /* min-size: 16px para compensar dpi */
 }
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100vh; /* Cambiado de min-height a height */
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* Asegura que no haya scroll no deseado */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); /* Safe Area */
+}
+
+/* Fix para Inputs en modo oscuro de Android */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="email"],
+textarea {
+  @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2;
 }
 
 /* Material Symbols Helper */

@@ -95,20 +95,29 @@ export const FieldRegistrationForm: React.FC<FieldRegistrationFormProps> = ({ on
             // Simular escaneo (en producción se integraría con hardware/sensores)
             await new Promise(resolve => setTimeout(resolve, 2000));
 
+            const volume_m3 = Number(formData.volume);
+            const density_factor = 1.8; // Valor por defecto (t/m³)
+            const weight_t = volume_m3 * density_factor;
+
             const stockpileData: StockpileData = {
                 name: formData.siteName,
-                volume: Number(formData.volume),
+                geometry_type: 'CONO_ELIPTICO', // Por defecto para este flujo
+                volumen: volume_m3, // Cambiado de volume_m3
+                density_factor,
+                weight_t,
+                dimensions: { base_m: 10, height_m: 5 }, // Valores simulados
                 location: coordinates || { lat: 0, lng: 0 },
                 timestamp: Date.now(),
                 metadata: {
-                    operator: formData.operator,
-                    date: formData.date,
+                    timestamp: Date.now(),
+                    geo: 'southamerica-west1',
+                    precision: 0.95,
+                    operatorId: formData.operator || 'anonymous',
                     notes: formData.notes,
-                    geoEnabled,
                 },
             };
 
-            // Guardar usando el plugin (MinReport.Data.extendEntity)
+            // Guardar usando el plugin (vía SecureContext.storage inyectado en plugin.ts -> dataService)
             const stockpileId = await stockpileControlPlugin.saveStockpileData(stockpileData);
 
             console.log('✅ Stockpile guardado:', stockpileId);

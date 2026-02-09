@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Stockpile Control',
   webDir: 'dist',
   server: {
-    url: 'http://192.168.1.87:5173',
+    androidScheme: 'http',
     cleartext: true
   }
 };

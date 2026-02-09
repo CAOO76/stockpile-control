@@ -29,10 +29,13 @@ export default defineConfig({
     sourcemap: 'hidden', // Source Maps privados para depuración interna
     rollupOptions: {
       output: {
-        // Asegurar nombres de archivos predecibles para SRI
         entryFileNames: `assets/[name].js`,
         chunkFileNames: `assets/[name].js`,
         assetFileNames: `assets/[name].[ext]`,
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-extra': ['recharts', 'framer-motion', 'three']
+        }
       },
     },
   },

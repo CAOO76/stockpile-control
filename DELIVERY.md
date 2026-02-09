@@ -1,74 +1,27 @@
-# 🚚 DELIVERY: Stockpile Control Plugin Integration Guide
+# manual de Entrega: Stockpile Control Plugin v1.0.0
 
-## Resumen Técnico
-El plugin `stockpile-control` es un módulo federado diseñado para integrarse con el núcleo de MINREPORT. Proporciona capacidades de fotogrametría, IA offline para cálculo de volumen y gestión de trazabilidad de acopios.
+## 1. Introducción
+El plugin **Stockpile Control** es una solución de clase mundial para la medición de acopios minerales, integrando fotogrametría, inteligencia de visión para granulometría y conciliación de oficina con romana real.
 
----
+## 2. Operación y Calibración
+El sistema utiliza un ciclo de aprendizaje cerrado para ajustar la precisión:
+1. **Terreno**: El operador mide el volumen y la IA sugiere una granulometría/densidad.
+2. **Oficina**: El administrador ingresa el peso real de romana.
+3. **Calibración**: El motor de IA promedia las desviaciones y sugiere nuevos factores globales.
+4. **Sincronización**: Al aceptar la sugerencia, el nuevo factor se propaga a todos los dispositivos móviles mediante el `SecureContext`.
 
-## 🛠️ Instrucciones de Integración
+## 3. Esquema de Datos (`extensions.stockpile-control`)
+Los datos se almacenan de forma blindada bajo las siguientes claves:
+- `stockpile_{id}`: Información completa del activo (volumen, medidas, factor usado, peso real).
+- `global_material_profiles`: Mapa de factores de densidad calibrados por granulometría.
+- `vision_feedback_loop`: Historial de correcciones del operador para re-entrenamiento local.
 
-### 1. Registro del Plugin
-El administrador debe cargar el archivo `manifest.json` en la interfaz de administración de MINREPORT.
-
-- **ID**: `stockpile-control`
-- **Entry Point**: Inyectar el `remoteEntry.js` generado en el build.
-- **Permisos**: Asegurar que la App Host conceda acceso a Cámara y Geolocalización.
-
-### 2. Configuración de Module Federation
-En el host de MINREPORT (Vite/Webpack), añadir el remote:
-
-```javascript
-remotes: {
-  'stockpile_control': 'https://[URL_DEL_PLUGIN]/assets/remoteEntry.js'
-}
-```
-
----
-
-## 📊 Esquema de Datos (Extensions)
-
-El plugin inyecta y consulta datos en el EntityManager del SDK bajo la extensión `stockpile-control`.
-
-### Estructura de `extensions.stockpile-control`
-
-```json
-{
-  "id": "string (uuid)",
-  "volume_m3": "number",
-  "estimated_tons": "number",
-  "density_factor": "number (kg/m3)",
-  "confidence_level": "number (0-100)",
-  "geo_point": {
-    "latitude": "number",
-    "longitude": "number",
-    "altitude": "number | null",
-    "accuracy": "number"
-  },
-  "region": "southamerica-west1",
-  "proxy_image_url": "string (WebP < 200kb)",
-  "mesh_3d_url": "string (.glb comprimido)",
-  "operator_name": "string",
-  "captured_at": "number (timestamp)",
-  "processed_at": "number (timestamp)"
-}
-```
+## 4. Instrucciones de Instalación
+Para administradores de MINREPORT:
+1. Copiar el bundle generado (`dist/`) al servidor de plugins.
+2. Registrar el plugin indicando la ruta al `manifest.json`.
+3. Asegurar que el entorno tenga acceso a la región `southamerica-west1` para los servicios de IA.
 
 ---
-
-## 🛡️ Seguridad y Auditoría
-
-- **Aislamiento**: El plugin opera en un sandbox y no accede a variables globales del host.
-- **Privacidad**: Todos los campos de entrada tienen `autocomplete='off'`.
-- **Integridad**: Se recomienda implementar SRI en el host utilizando el hash generado para `remoteEntry.js`.
-- **Región**: Todos los servicios de persistencia están limitados a `southamerica-west1`.
-
----
-
-## 🚀 Despliegue
-1. Ejecutar `npm run build`.
-2. Desplegar el contenido de `dist/` en un Bucket de Cloud Storage o servidor estático.
-3. Asegurar que los headers CORS permitan el acceso desde el dominio de MINREPORT.
-
----
-
-**Entregado por Antigravity Dev Team**
+**Firma Digital del Plugin:** `minreport-auth-v2-stockpile-control-secure`
+**Región de Datos:** `southamerica-west1`

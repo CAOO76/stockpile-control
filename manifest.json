@@ -1,27 +1,19 @@
 {
     "id": "stockpile-control",
-    "name": "Stockpile Control Plugin",
+    "name": "Stockpile Control",
     "version": "1.0.0",
-    "description": "Gestión operativa de acopios con fotogrametría e IA",
-    "entry_point": "./remoteEntry.js",
-    "framework": "vite-federation",
+    "description": "Control de inventario de acopios con fotogrametría e inteligencia de densidad.",
+    "author": "MINREPORT Plugin Developer",
+    "entry": "remoteEntry.js",
+    "type": "module",
     "permissions": [
         "camera",
         "geolocation",
         "offline-storage",
-        "network-state"
+        "secure-context-access"
     ],
-    "shared_entities": [
-        "acopios",
-        "minerales",
-        "sensores"
-    ],
-    "region_constraint": "southamerica-west1",
-    "security": {
-        "sandbox": true,
-        "autocomplete_enforcement": true,
-        "sri_enabled": true
-    },
-    "author": "Antigravity Dev Team",
-    "repository": "https://github.com/minreport/stockpile-control"
+    "config": {
+        "region": "southamerica-west1",
+        "secureStorage": true
+    }
 }

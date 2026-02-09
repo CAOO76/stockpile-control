@@ -1,4 +1,6 @@
-import type { PluginLifeCycle, PluginConfig } from './lib/minreport-sdk-mock';
+import React, { type ReactNode } from 'react';
+import App from './App';
+import type { PluginConfig, SecureContext } from '@minreport/sdk';
 import { enableOfflinePersistence, getFirebaseConfig } from './config/firebase.config';
 import { dataService, type StockpileData } from './services/DataService';
 import { storageService } from './services/StorageService';
@@ -8,14 +10,14 @@ import { connectivityMonitor } from './utils/offline';
  * Plugin de Control de Stockpile para MINREPORT
  * Implementa el ciclo de vida requerido por la plataforma
  */
-export class StockpileControlPlugin implements PluginLifeCycle {
+export class StockpileControlPlugin {
     private config: PluginConfig;
     private isActive: boolean = false;
 
     constructor() {
         this.config = {
             name: 'stockpile-control',
-            version: '1.0.5',
+            version: '2.0.0',
             description: 'Plugin de control y monitoreo de stockpile para MINREPORT',
             author: 'MINREPORT Team',
         };
@@ -63,11 +65,21 @@ export class StockpileControlPlugin implements PluginLifeCycle {
      * Método del ciclo de vida opcional: Inicialización
      * Se ejecuta al cargar el plugin por primera vez
      */
-    async onInit(): Promise<void> {
-        console.log('[StockpileControl] Plugin inicializado');
-        console.log('Configuración:', this.config);
+    async onInit(context: SecureContext): Promise<void> {
+        console.log('[StockpileControl] Plugin inicializado con contexto seguro:', context);
 
-        // TODO: Configuración inicial del plugin
+        // Inyectar contexto en el servicio de datos para habilitar persistencia blindada
+        dataService.setSecureContext(context);
+
+        console.log('Configuración:', this.config);
+        this.isActive = true; // Forzamos activo para asegurar rendering en admin
+    }
+
+    /**
+     * RETORNA EL COMPONENTE PRINCIPAL (Requerido por MINREPORT)
+     */
+    public renderWidget(): ReactNode {
+        return React.createElement(App);
     }
 
     /**

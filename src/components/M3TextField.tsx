@@ -10,6 +10,7 @@ export interface M3TextFieldProps {
     error?: string;
     placeholder?: string;
     helperText?: string;
+    autoComplete?: string;
 }
 
 export const M3TextField: React.FC<M3TextFieldProps> = ({
@@ -22,6 +23,7 @@ export const M3TextField: React.FC<M3TextFieldProps> = ({
     error,
     placeholder,
     helperText,
+    autoComplete,
 }) => {
     const hasError = Boolean(error);
     const hasValue = value.length > 0;
@@ -44,7 +46,7 @@ export const M3TextField: React.FC<M3TextFieldProps> = ({
                     placeholder={placeholder || ' '}
                     required={required}
                     disabled={disabled}
-                    autoComplete="off"
+                    autoComplete={autoComplete || 'off'}
                     aria-label={label}
                     aria-invalid={hasError}
                 />
