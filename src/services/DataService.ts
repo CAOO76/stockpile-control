@@ -139,6 +139,37 @@ export class DataService {
             callback(snap.docs.map(d => d.data() as StockpileMeasurement));
         });
     }
+
+    /**
+     * Obtener Perfiles de Material (Factores de Densidad)
+     */
+    async getMaterialProfiles(): Promise<Record<string, number>> {
+        const docSnap = await getDoc(doc(this.db, 'config', 'material_profiles'));
+        if (docSnap.exists()) {
+            return docSnap.data() as Record<string, number>;
+        }
+        // Default profiles if not found
+        return {
+            'COLPAS': 1.6,
+            'GRANSA': 1.8,
+            'MIXTO': 1.7,
+            'FINOS': 1.5
+        };
+    }
+
+    /**
+     * Guardar Perfiles de Material
+     */
+    async saveMaterialProfiles(profiles: Record<string, number>): Promise<void> {
+        await setDoc(doc(this.db, 'config', 'material_profiles'), profiles);
+    }
+
+    /**
+     * Guardar datos de Stockpile (Actualización completa o parcial)
+     */
+    async saveStockpileData(data: Partial<StockpileAsset>, id: string): Promise<void> {
+        await setDoc(doc(this.db, this.ASSETS_PATH, id), data, { merge: true });
+    }
 }
 
 export const dataService = new DataService();

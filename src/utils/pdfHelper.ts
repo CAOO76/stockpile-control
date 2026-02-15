@@ -29,44 +29,91 @@ export const blobToBase64 = (blob: Blob): Promise<string> => {
  * @returns PDF blob
  */
 export const generatePDFBlob = async (elementId: string): Promise<Blob> => {
-    console.log('[PDF Helper] Starting PDF generation for element:', elementId);
-
-    // 1. Get the element
+    console.log('[PDF Helper] Starting Multi-page PDF generation for element:', elementId);
     const element = document.getElementById(elementId);
     if (!element) {
         throw new Error(`Element with ID "${elementId}" not found`);
     }
 
-    console.log('[PDF Helper] Element found, capturing as PNG...');
+    // 1. Wait for images to be ready (Polling data-ready attribute)
+    console.log('[PDF Helper] Waiting for images to be pre-loaded...');
+    let isReady = false;
+    let attempts = 0;
+    while (!isReady && attempts < 50) { // Max 5 seconds (100ms * 50)
+        isReady = element.getAttribute('data-ready') === 'true';
+        if (!isReady) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+    }
 
-    // 2. Capture as PNG (high quality)
-    const dataUrl = await htmlToImage.toPng(element, {
-        quality: 1.0,
-        pixelRatio: 2, // 2x for crisp text
-        backgroundColor: '#ffffff',
-        width: 794, // A4 width at 96 DPI (210mm)
-        height: 1123 // A4 height at 96 DPI (297mm)
-    });
+    if (!isReady) {
+        console.warn('[PDF Helper] Component not ready after timeout, capturing anyway...');
+    } else {
+        console.log(`[PDF Helper] Content ready after ${attempts * 100}ms`);
+    }
 
-    console.log('[PDF Helper] PNG captured, converting to PDF...');
+    // Extra safety delay for rendering engine
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    // 3. Create PDF from image
-    const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-    });
+    // Ensure dimension reflow
+    const width = element.offsetWidth || 794; // fallback to A4 width at 96dpi
+    if (width === 0) {
+        console.warn('[PDF Helper] Element width is 0, using fallback');
+    }
 
-    // Add image to PDF (full page)
-    pdf.addImage(dataUrl, 'PNG', 0, 0, 210, 297);
+    try {
+        // 1. Capture the entire element height as JPEG
+        console.log('[PDF Helper] Capturing element via html-to-image...');
+        const dataUrl = await htmlToImage.toJpeg(element, {
+            quality: 0.9,
+            pixelRatio: 1.5,
+            backgroundColor: '#ffffff',
+            width: width,
+        });
 
-    console.log('[PDF Helper] PDF created');
+        if (!dataUrl || dataUrl === 'data:,') {
+            throw new Error('Image capture returned empty data');
+        }
 
-    // 4. Generate blob
-    const pdfBlob = pdf.output('blob');
-    console.log('[PDF Helper] PDF Blob size:', pdfBlob.size, 'bytes');
+        // 2. Setup jsPDF
+        console.log('[PDF Helper] Converting to PDF via jsPDF...');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4',
+            compress: true
+        });
 
-    return pdfBlob;
+        const imgProps = pdf.getImageProperties(dataUrl);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+
+        // Prevent Divide by Zero
+        if (imgProps.width === 0) throw new Error('Captured image width is zero');
+
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        let heightLeft = pdfHeight;
+        let position = 0;
+
+        // 3. Add pages
+        pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+
+        while (heightLeft > 2) {
+            position = heightLeft - pdfHeight;
+            pdf.addPage();
+            pdf.addImage(dataUrl, 'JPEG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pageHeight;
+        }
+
+        console.log('[PDF Helper] PDF generated successfully');
+        return pdf.output('blob');
+    } catch (err: any) {
+        console.error('[PDF Helper] Generate ERROR:', err);
+        throw new Error(`Fallo en generación: ${err.message || 'Error desconocido'}`);
+    }
 };
 
 /**
@@ -76,27 +123,19 @@ export const generatePDFBlob = async (elementId: string): Promise<Blob> => {
  */
 export const downloadPDF = async (elementId: string, fileName: string): Promise<void> => {
     try {
-        console.log('[PDF Helper] Starting download...');
-
-        // 1. Generate PDF
         const pdfBlob = await generatePDFBlob(elementId);
-
-        // 2. Convert to base64
         const base64Data = await blobToBase64(pdfBlob);
 
-        // 3. Save to Downloads directory
-        const savedFile = await Filesystem.writeFile({
+        await Filesystem.writeFile({
             path: `${fileName}.pdf`,
             data: base64Data,
-            directory: Directory.Documents // Android saves to Documents folder
+            directory: Directory.Documents
         });
 
-        console.log('[PDF Helper] PDF saved to:', savedFile.uri);
         alert(`PDF guardado en Documents/${fileName}.pdf`);
-
     } catch (error: any) {
         console.error('[PDF Helper] Download ERROR:', error);
-        throw new Error(`Error al descargar PDF: ${error.message}`);
+        alert(`Error al descargar: ${error.message || 'Error desconocido'}`);
     }
 };
 
@@ -112,36 +151,28 @@ export const sharePDF = async (
     title: string
 ): Promise<void> => {
     try {
-        console.log('[PDF Helper] Starting share...');
-
-        // 1. Generate PDF
         const pdfBlob = await generatePDFBlob(elementId);
-
-        // 2. Convert to base64
         const base64Data = await blobToBase64(pdfBlob);
 
-        // 3. Save to temp cache
         const savedFile = await Filesystem.writeFile({
             path: `${fileName}.pdf`,
             data: base64Data,
             directory: Directory.Cache
         });
 
-        console.log('[PDF Helper] Temp PDF created:', savedFile.uri);
+        console.log('[PDF Helper] Sharing URI:', savedFile.uri);
 
-        // 4. Share via native Android dialog
         await Share.share({
             title: title,
-            text: `Reporte técnico generado por MINREPORT Stockpile Control`,
+            text: `Reporte técnico - Stockpile Control`,
             url: savedFile.uri,
             dialogTitle: title
         });
 
-        console.log('[PDF Helper] Share dialog opened successfully');
-
     } catch (error: any) {
         console.error('[PDF Helper] Share ERROR:', error);
-        throw new Error(`Error al compartir PDF: ${error.message}`);
+        // This is where "undefinded" might come from if error.message missing
+        throw new Error(`Error al compartir PDF: ${error.message || error || 'Error desconocido'}`);
     }
 };
 

@@ -23,6 +23,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
     const [generatingPdf, setGeneratingPdf] = useState(false);
     const [manualPdfUrl, setManualPdfUrl] = useState<string | null>(null);
     const [showOriginal, setShowOriginal] = useState(false);
+    const [shareImmediately, setShareImmediately] = useState(false);
 
     useEffect(() => {
         const loadData = async () => {
@@ -53,6 +54,39 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
         };
     }, [assetId]);
 
+    // Handle Direct Sharing logic
+    useEffect(() => {
+        if (generatingPdf && shareImmediately && asset) {
+            const performShare = async () => {
+                try {
+                    console.log('[Dashboard] Starting direct share process...');
+                    // Increased delay to ensure rendering completion
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    const now = new Date();
+                    const dateStr = now.toISOString().split('T')[0];
+                    const timeStr = now.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(':', '');
+                    const fileName = `Ficha_${asset.name}_${dateStr}_${timeStr}hrs`;
+
+                    const { sharePDF } = await import('../utils/pdfHelper');
+                    await sharePDF(
+                        'stitch-pdf-summary',
+                        fileName,
+                        `Reporte: ${asset.name}`
+                    );
+                    console.log('[Dashboard] Direct share completed');
+                } catch (err: any) {
+                    console.error('[Dashboard] Direct share error:', err);
+                    alert('Error al compartir: ' + err.message);
+                } finally {
+                    setGeneratingPdf(false);
+                    setShareImmediately(false);
+                }
+            };
+            performShare();
+        }
+    }, [generatingPdf, shareImmediately, asset]);
+
     if (loading || !asset) {
         return (
             <div className="h-screen w-screen bg-black flex items-center justify-center">
@@ -80,19 +114,14 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                 <div className="flex gap-2">
                     <button
                         onClick={() => {
-                            console.log('[PDF] Showing report for manual export');
+                            console.log('[Dashboard] Share clicked (Direct native flow)');
                             setGeneratingPdf(true);
+                            setShareImmediately(true);
                         }}
                         className="w-10 h-10 flex items-center justify-center text-white/30 active:text-white transition-colors bg-white/5 rounded-xl hover:bg-white/10"
                         title="Ver Reporte"
                     >
-                        <span className="material-symbols-outlined text-xl">picture_as_pdf</span>
-                    </button>
-                    <button className="w-10 h-10 flex items-center justify-center text-white/30 active:text-white transition-colors">
                         <span className="material-symbols-outlined text-xl">share</span>
-                    </button>
-                    <button className="w-10 h-10 flex items-center justify-center bg-white/5 text-white/40 rounded-xl active:bg-red-500/20 active:text-red-500 transition-all">
-                        <span className="material-symbols-outlined text-xl">delete</span>
                     </button>
                     <button className="w-10 h-10 flex items-center justify-center bg-primary text-black rounded-xl active:scale-90 transition-transform shadow-[0_0_15px_rgba(255,176,0,0.2)]">
                         <span className="material-symbols-outlined text-xl font-bold">edit</span>
@@ -171,6 +200,77 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                 <span className="text-[10px] ml-0.5 opacity-40 font-bold">m³</span>
                             </div>
                         </div>
+                    </div>
+
+                    {/* GPS Map Section: Embedded Satellite Map (Last Measurement Location) */}
+                    <div className="space-y-3 pt-6">
+                        {(() => {
+                            const apiKey = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY;
+
+                            // Debugging logs (minimized for prod)
+                            console.log('[Dashboard] Map Config Check:', { hasApiKey: !!apiKey });
+
+                            if (!lastM?.location_metadata) {
+                                return (
+                                    <div className="p-4 rounded-[20px] border border-white/10 bg-white/5 flex items-center justify-center">
+                                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest text-center">
+                                            SIN DATOS DE GPS EN EL HISTORIAL ({lastM.id})
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            if (!apiKey) {
+                                return (
+                                    <div className="p-4 rounded-[20px] bg-red-900/20 border border-red-500/50 flex flex-col items-center justify-center">
+                                        <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest text-center">
+                                            MISSING GOOGLE MAPS API KEY
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lastM.location_metadata.lat},${lastM.location_metadata.lng}&zoom=19&size=640x360&maptype=satellite&scale=2&markers=color:0xff6b00%7C${lastM.location_metadata.lat},${lastM.location_metadata.lng}&key=${apiKey}`;
+
+                            return (
+                                <>
+                                    <div className="flex flex-col gap-1 px-1">
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-[9px] font-bold text-primary italic uppercase tracking-widest">LOCALIZACIÓN SATELITAL (ÚLTIMA MEDICIÓN)</span>
+                                            <span className="text-[9px] font-bold text-white/20 italic">±{lastM.location_metadata.accuracy.toFixed(1)}m</span>
+                                        </div>
+                                        <p className="text-xs font-black text-white/40 font-mono tracking-tighter">
+                                            {lastM.location_metadata.lat.toFixed(6)} / {lastM.location_metadata.lng.toFixed(6)}
+                                        </p>
+                                    </div>
+
+                                    <div className="w-full aspect-video rounded-[40px] overflow-hidden border border-white/10 bg-black shadow-2xl relative group">
+                                        <img
+                                            src={mapUrl}
+                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
+                                            alt="Ubicación Satelital"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                const parent = e.currentTarget.parentElement;
+                                                if (parent) {
+                                                    const errorDiv = document.createElement('div');
+                                                    errorDiv.className = "absolute inset-0 flex flex-col items-center justify-center bg-gray-900";
+                                                    errorDiv.innerHTML = `
+                                                        <span class="material-symbols-outlined text-4xl text-white/20 mb-2">satellite_alt</span>
+                                                        <span class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Imagen No Disponible</span>
+                                                    `;
+                                                    parent.appendChild(errorDiv);
+                                                }
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 pointer-events-none border-[12px] border-black/20 rounded-[40px]" />
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div className="w-4 h-4 bg-primary rounded-full shadow-[0_0_20px_rgba(255,255,255,0.5)] animate-pulse"></div>
+                                        </div>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
 
                     {/* History Selection */}
@@ -273,7 +373,10 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
 
             {/* Enhanced Report View with Photos & Charts */}
             {asset && generatingPdf && (
-                <div className="fixed inset-0 z-[10000] bg-white overflow-auto">
+                <div
+                    className={`fixed z-[9000] bg-white overflow-auto ${shareImmediately ? 'pointer-events-none' : 'inset-0'}`}
+                    style={shareImmediately ? { left: '-10000px', top: '0', width: '210mm', height: 'auto' } : {}}
+                >
                     {/* Floating Action Buttons */}
                     <div className="fixed top-4 right-4 z-[10001] flex flex-col gap-2">
                         {/* Download PDF Button */}
@@ -298,28 +401,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                             <span className="material-symbols-outlined text-2xl font-black">download</span>
                         </button>
 
-                        {/* Share PDF Button */}
-                        <button
-                            onClick={async () => {
-                                try {
-                                    console.log('[Dashboard] Share PDF clicked');
-                                    const { sharePDF } = await import('../utils/pdfHelper');
 
-                                    await sharePDF(
-                                        'stitch-pdf-summary',
-                                        `Ficha_${asset.name}_${new Date().toISOString().split('T')[0]}`,
-                                        `Reporte: ${asset.name}`
-                                    );
-                                } catch (err: any) {
-                                    console.error('[Dashboard] Share error:', err);
-                                    alert('Error al compartir: ' + err.message);
-                                }
-                            }}
-                            className="w-14 h-14 rounded-full bg-black text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
-                            title="Compartir PDF"
-                        >
-                            <span className="material-symbols-outlined text-2xl font-black">share</span>
-                        </button>
 
                         {/* Close Button */}
                         <button
