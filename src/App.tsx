@@ -1,206 +1,203 @@
-/**
- * Main App Component
- * Material Design 3 + Atkinson Hyperlegible + Framer Motion
- * Transiciones fluidas entre Captura y Dashboard
- */
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FieldRegistrationForm } from './components/FieldRegistrationForm';
-import { ResultsDashboard } from './components/ResultsDashboard';
+import { MobileScanner } from './components/MobileScanner';
+import { MobileHome } from './components/MobileHome';
+import { CaptureSelection } from './components/CaptureSelection';
 import { DesktopAnalytics } from './components/DesktopAnalytics';
-import VisionAnalyzer from './components/VisionAnalyzer'; // <-- 1. Importar componente
-import { dataService, type StockpileData } from './services/DataService';
-import { connectivityMonitor } from './utils/offline';
-// Los estilos se gestionan ahora vía Tailwind CSS en index.css
+import VisionAnalyzer from './components/VisionAnalyzer';
+import { usePlatform } from './hooks/usePlatform';
+import { MainLayout } from './layouts/MainLayout';
+import { MockSecureContext } from './services/sdk-mock';
+import { ManualCapture } from './components/ManualCapture';
+import { StockpileRegistration } from './components/StockpileRegistration';
+import { StockpileDashboard } from './components/StockpileDashboard';
+import { StockList } from './components/StockList';
+import { MeasurementDetail } from './components/MeasurementDetail';
+import { GeometrySelection } from './components/GeometrySelection';
+import type { GeometryType } from './components/GeometrySelection';
 
-type ViewState = 'capture' | 'dashboard' | 'management' | 'vision'; // <-- 2. Añadir nuevo estado de vista
+
+export type ViewState =
+  | 'home'
+  | 'registration'
+  | 'stock_list'
+  | 'asset_portada'
+  | 'selection'
+  | 'geometry_selection'
+  | 'capture'
+  | 'manual_capture'
+  | 'vision'
+  | 'results'
+  | 'measurement_detail'
+  | 'management';
 
 function App() {
-  const [view, setView] = useState<ViewState>('capture');
-  const [currentStockpile, setCurrentStockpile] = useState<StockpileData | null>(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const { isNative } = usePlatform();
+  const [view, setView] = useState<ViewState>('home');
+  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [selectedMeasurementId, setSelectedMeasurementId] = useState<string | null>(null);
+  const [selectedGeometry, setSelectedGeometry] = useState<GeometryType>('CONO_ELIPTICO');
 
-  // 5. Mock del SDK Context para VisionAnalyzer
-  const mockSdk = {
-    storage: {
-      write: (key: string, value: any) => {
-        console.log(`[SDK Mock] Writing to key '${key}':`, value);
-        localStorage.setItem(key, JSON.stringify(value));
-        return Promise.resolve();
-      },
-    },
-  };
-
-  const handleAnalysisComplete = (result: { factor: number; image: string }) => {
-    console.log('[App] Analysis complete:', result);
-    // Podrías usar este resultado para actualizar otro estado o navegar.
-    // Por ahora, volvemos a la vista de captura.
-    setView('capture');
-  };
-
+  // Efecto para establecer la vista inicial
   useEffect(() => {
-    // Suscribirse a cambios de conectividad
-    const unsubscribe = connectivityMonitor.subscribe((state) => {
-      setIsOnline(state.online);
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  const handleScanSuccess = async (stockpileId: string) => {
-    // Obtener datos del stockpile guardado
-    const data = await dataService.getStockpileData(stockpileId);
-
-    if (data) {
-      setCurrentStockpile(data);
-      setView('dashboard');
+    if (isNative) {
+      setView('home');
+    } else {
+      setView('management');
     }
+  }, [isNative]);
+
+  // --- Handlers de Flujo ---
+
+  const handleStartRegistration = () => setView('registration');
+
+  const handleRegistrationSuccess = (assetId: string) => {
+    setSelectedAssetId(assetId);
+    setView('asset_portada');
   };
 
-  const handleNewScan = () => {
-    setCurrentStockpile(null);
-    setView('capture');
+  const handleAddMeasurement = () => setView('selection');
+
+  const handleCaptureSuccess = async (measurementId: string) => {
+    console.log('[App] Capture Success:', measurementId);
+    // Al capturar éxito (Manual/Digital), volvemos a la portada del activo para ver el resultado consolidado
+    setView('asset_portada');
   };
 
-  // Variantes de animación para Framer Motion
+  const handleAnalysisComplete = (result: { type: string; image: string }) => {
+    console.log('[App] Vision analysis complete:', result);
+    // Aquí podrías navegar a resultados o guardar directamente
+    setView('asset_portada');
+  };
+
   const pageVariants = {
-    initial: { opacity: 0, scale: 0.98 },
-    animate: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 1.02 },
+    initial: { opacity: 0, x: 20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -20 },
   };
 
-  return (
-    <div className="app bg-antigravity-light-bg dark:bg-antigravity-dark-bg text-antigravity-light-text dark:text-antigravity-dark-text min-h-screen flex flex-col transition-colors duration-200 font-sans">
-      {/* Header con navegación */}
-      <header className="app-header bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-b border-antigravity-light-border dark:border-antigravity-dark-border sticky top-0 z-[100]">
-        <div className="header-content max-w-[1240px] mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <h1 className="app-title text-2xl font-bold flex items-center gap-2">
-            <span className="material-symbols-rounded text-antigravity-accent">precision_manufacturing</span> Stockpile Control
-          </h1>
-
-          <nav className="app-nav flex gap-2">
-            <button
-              className={`nav-button px-4 py-2 rounded-xl font-medium transition-all duration-200 border flex items-center gap-2
-                                ${view === 'capture'
-                  ? 'bg-antigravity-accent text-white border-antigravity-accent shadow-lg shadow-antigravity-accent/20'
-                  : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}`}
-              onClick={() => setView('capture')}
-            >
-              <span className="material-symbols-rounded text-sm">qr_code_scanner</span> Captura
-            </button>
-            {/* <-- 3. Botón para nueva vista de Visión --> */}
-            <button
-              className={`nav-button px-4 py-2 rounded-xl font-medium transition-all duration-200 border flex items-center gap-2
-                                ${view === 'vision'
-                  ? 'bg-antigravity-accent text-white border-antigravity-accent shadow-lg shadow-antigravity-accent/20'
-                  : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}`}
-              onClick={() => setView('vision')}
-            >
-              <span className="material-symbols-rounded text-sm">camera</span> Visión
-            </button>
-            <button
-              className={`nav-button px-4 py-2 rounded-xl font-medium transition-all duration-200 border flex items-center gap-2
-                                ${view === 'dashboard'
-                  ? 'bg-antigravity-accent text-white border-antigravity-accent shadow-lg shadow-antigravity-accent/20'
-                  : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}
-                                disabled:opacity-30 disabled:cursor-not-allowed`}
-              onClick={() => setView('dashboard')}
-              disabled={!currentStockpile}
-            >
-              <span className="material-symbols-rounded text-sm">dashboard</span> Dashboard
-            </button>
-            <button
-              className={`nav-button px-4 py-2 rounded-xl font-medium transition-all duration-200 border flex items-center gap-2
-                                ${view === 'management'
-                  ? 'bg-antigravity-accent text-white border-antigravity-accent shadow-lg shadow-antigravity-accent/20'
-                  : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}`}
-              onClick={() => setView('management')}
-            >
-              <span className="material-symbols-rounded text-sm">inventory_2</span> Gestión
-            </button>
-          </nav>
-
-          {/* Indicador de conectividad */}
-          <div className={`connectivity-indicator px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5
-                        ${isOnline
-              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-              : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
-            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-            {isOnline ? 'En Línea' : 'Sin Conexión'}
-          </div>
-        </div>
-      </header>
-
-      {/* Contenido principal con transiciones animadas */}
-      <main className={`app-main flex-1 w-full mx-auto ${view === 'management' || view === 'vision' ? 'max-w-full px-0 py-0' : 'max-w-[1200px] px-4 py-8'}`}>
+  // VERSIÓN MÓVIL
+  if (isNative) {
+    return (
+      <div className="relative h-screen w-screen overflow-hidden bg-black">
         <AnimatePresence mode="wait">
-          {view === 'capture' && (
-            <motion.div
-              key="capture"
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.3 }}
-            >
-              <FieldRegistrationForm onSuccess={handleScanSuccess} />
-            </motion.div>
-          )}
-          {/* <-- 4. Renderizado del nuevo componente --> */}
-          {view === 'vision' && (
-            <motion.div
-              key="vision"
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.3 }}
-              className="h-full"
-            >
-              <VisionAnalyzer context={mockSdk} onAnalysisComplete={handleAnalysisComplete} />
-            </motion.div>
-          )}
-          {view === 'dashboard' && (
-            <motion.div
-              key="dashboard"
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.3 }}
-            >
-              <ResultsDashboard
-                stockpileData={currentStockpile}
-                onNewScan={handleNewScan}
+          {view === 'home' && (
+            <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <MobileHome
+                onStartNewScan={handleStartRegistration}
+                onViewRecords={() => setView('stock_list')}
               />
             </motion.div>
           )}
-          {view === 'management' && (
-            <motion.div
-              key="management"
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={{ duration: 0.3 }}
-              className="h-full"
-            >
-              <DesktopAnalytics />
+
+          {view === 'registration' && (
+            <motion.div key="reg" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <StockpileRegistration
+                onSuccess={handleRegistrationSuccess}
+                onCancel={() => setView('home')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'stock_list' && (
+            <motion.div key="list" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <StockList
+                onSelectAsset={(id) => {
+                  setSelectedAssetId(id);
+                  setView('asset_portada');
+                }}
+                onBack={() => setView('home')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'asset_portada' && selectedAssetId && (
+            <motion.div key="portada" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <StockpileDashboard
+                assetId={selectedAssetId}
+                onAddMeasurement={handleAddMeasurement}
+                onSelectMeasurement={(mid) => {
+                  setSelectedMeasurementId(mid);
+                  setView('measurement_detail');
+                }}
+                onBack={() => setView('home')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'selection' && (
+            <motion.div key="selection" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <CaptureSelection
+                onSelection={(type) => {
+                  if (type === 'digital') setView('capture');
+                  else setView('geometry_selection');
+                }}
+                onBack={() => setView('asset_portada')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'geometry_selection' && (
+            <motion.div key="geometry" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <GeometrySelection
+                onSelection={(type) => {
+                  setSelectedGeometry(type);
+                  setView('manual_capture');
+                }}
+                onBack={() => setView('selection')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'capture' && selectedAssetId && (
+            <motion.div key="capture" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <MobileScanner
+                assetId={selectedAssetId}
+                onSuccess={handleCaptureSuccess}
+                onBack={() => setView('selection')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'manual_capture' && selectedAssetId && (
+            <motion.div key="manual" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <ManualCapture
+                assetId={selectedAssetId}
+                initialGeometry={selectedGeometry}
+                onSuccess={handleCaptureSuccess}
+                onBack={() => setView('geometry_selection')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'measurement_detail' && selectedMeasurementId && (
+            <motion.div key="detail" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <MeasurementDetail
+                measurementId={selectedMeasurementId}
+                onBack={() => setView('asset_portada')}
+              />
+            </motion.div>
+          )}
+
+          {view === 'vision' && (
+            <motion.div key="vision" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+              <VisionAnalyzer context={MockSecureContext} onAnalysisComplete={handleAnalysisComplete} />
             </motion.div>
           )}
         </AnimatePresence>
-      </main>
+      </div>
+    );
+  }
 
-      {/* Footer */}
-      <footer className="app-footer bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-t border-antigravity-light-border dark:border-antigravity-dark-border py-4 text-center">
-        <p className="footer-text text-[10px] text-antigravity-light-muted dark:text-antigravity-dark-muted tracking-widest uppercase">
-          Plugin Stockpile Control v1.0.5 | Región: southamerica-west1 | Blindaje Activo
-        </p>
-      </footer>
-    </div>
+  // VERSIÓN WEB: CON MainLayout (plugin embebido)
+  return (
+    <MainLayout
+      view={view as any}
+      setView={setView as any}
+      hasActiveStockpile={!!selectedAssetId}
+    >
+      <DesktopAnalytics />
+    </MainLayout>
   );
 }
 

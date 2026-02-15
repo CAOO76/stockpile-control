@@ -11,6 +11,7 @@ export interface M3TextFieldProps {
     placeholder?: string;
     helperText?: string;
     autoComplete?: string;
+    className?: string;
 }
 
 export const M3TextField: React.FC<M3TextFieldProps> = ({
@@ -24,12 +25,13 @@ export const M3TextField: React.FC<M3TextFieldProps> = ({
     placeholder,
     helperText,
     autoComplete,
+    className = '',
 }) => {
     const hasError = Boolean(error);
     const hasValue = value.length > 0;
 
     return (
-        <div className="m3-text-field-container w-full my-4">
+        <div className={`m3-text-field-container w-full my-4 ${className}`}>
             <div className={`m3-text-field relative flex flex-col w-full ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}>
                 <input
                     type={type}

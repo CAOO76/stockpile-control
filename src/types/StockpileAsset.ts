@@ -1,47 +1,71 @@
 /**
  * StockpileAsset Type
- * Objeto compatible con extensions.stockpile-control para trazabilidad y georeferencia.
+ * Representa la identidad de un acopio físico en terreno.
+ * El activo persiste mientras el acopio no se extinga.
  */
 
 export interface StockpileAsset {
     // Identificación
     id: string;
     name: string;
-    asset_type: 'mineral' | 'coal' | 'other';
+    clase: 'mineral' | 'esteril' | 'baja_ley';
+    createdAt: number;
+    createdBy: string;
 
-    // Volumetría
-    volume_m3: number;
-    estimated_tons: number;
-    density_factor: number; // kg/m³
-
-    // Confiabilidad
-    confidence_level: number; // 0-100
-    calculation_method: 'convex-hull' | 'delaunay' | 'voxel';
-
-    // Georeferencia (región southamerica-west1)
+    // Georeferencia Inicial (Alta del Activo)
     geo_point: {
         latitude: number;
         longitude: number;
         altitude: number | null;
-        accuracy: number; // metros
+        accuracy: number;
     };
-    region: 'southamerica-west1';
+    location_ref?: string; // Descripción manual de la ubicación
 
-    // Trazabilidad
-    operator_notes: string;
-    operator_name: string;
-    captured_at: number; // timestamp
-    processed_at: number; // timestamp
+    // Recursos
+    initial_photo_url?: string;
+    thumbnail_url?: string; // Optimizada para listas
 
-    // Recursos (URLs de Cloud Storage)
-    proxy_image_url: string; // WebP gnerado (< 200kb)
-    mesh_3d_url: string; // .glb comprimido
+    // Estado Actual (Metadata derivada de la última medición)
+    last_volume_m3?: number;
+    last_weight_t?: number;
+    last_photo_url?: string;
+    last_measured_at?: number;
 
-    // Metadata técnica
-    metadata: {
-        image_count: number;
-        processing_time_ms: number;
-        sensor_data_quality: number; // 0-100
-        point_cloud_density: number; // número de puntos
+    // Historial se maneja como una subcolección o array de mediciones
+}
+
+/**
+ * StockpileMeasurement Type
+ * Representa una cubicación técnica realizada en un momento específico.
+ */
+export interface StockpileMeasurement {
+    id: string;
+    assetId: string;
+    timestamp: number;
+
+    // Resultados Técnicos
+    volumen_m3: number;
+    peso_t: number;
+    density_factor?: number;
+
+    // Evidencia
+    photo_url: string;
+    method: 'digital' | 'manual';
+
+    // Georeferencia (Metadata de trazabilidad)
+    location_metadata?: {
+        lat: number;
+        lng: number;
+        accuracy: number;
     };
+
+    // Detalles de Geometría (Si aplica)
+    geometry?: {
+        type: string;
+        dimensions: Record<string, number>;
+    };
+
+    // Deltas vs Medición Anterior (Calculados en runtime o guardado)
+    delta_volumen?: number;
+    delta_peso?: number;
 }

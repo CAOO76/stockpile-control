@@ -7,6 +7,7 @@ export interface SDKButtonProps {
     disabled?: boolean;
     fullWidth?: boolean;
     type?: 'button' | 'submit' | 'reset';
+    className?: string;
 }
 
 export const SDKButton: React.FC<SDKButtonProps> = ({
@@ -16,6 +17,7 @@ export const SDKButton: React.FC<SDKButtonProps> = ({
     disabled = false,
     fullWidth = false,
     type = 'button',
+    className = '',
 }) => {
     const baseStyles = "inline-flex items-center justify-center min-h-[40px] px-6 py-2 rounded-full font-bold text-sm uppercase tracking-wide transition-all duration-200 select-none active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100";
 
@@ -28,7 +30,7 @@ export const SDKButton: React.FC<SDKButtonProps> = ({
     return (
         <button
             type={type}
-            className={`${baseStyles} ${variants[variant]} ${fullWidth ? 'w-full' : ''}`}
+            className={`${baseStyles} ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}
             onClick={onClick}
             disabled={disabled}
         >

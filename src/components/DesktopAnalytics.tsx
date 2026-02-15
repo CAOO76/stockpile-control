@@ -28,7 +28,7 @@ export const DesktopAnalytics: React.FC = () => {
     useEffect(() => {
         const init = async () => {
             const [data, profiles] = await Promise.all([
-                dataService.getAllStockpiles(),
+                dataService.getAllAssets(),
                 dataService.getMaterialProfiles()
             ]);
             setAssets(data);
@@ -116,7 +116,7 @@ export const DesktopAnalytics: React.FC = () => {
             <header className="mb-8 flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                        <span className="material-symbols-rounded text-antigravity-accent">inventory_2</span>
+                        <span className="material-symbols-outlined text-antigravity-accent">landscape</span>
                         Gestión de Inventario y Conciliación
                     </h1>
                     <p className="opacity-60 text-sm mt-1">Calibración de Factores de Densidad vs. Romana Real</p>

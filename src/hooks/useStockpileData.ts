@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { MinReport } from '../lib/minreport-sdk-mock';
+import { MinReport } from '../services/sdk-mock';
 import type { StockpileAsset } from '../types/StockpileAsset';
 
 export interface StockpileDataQuery {
@@ -51,7 +51,7 @@ export function useStockpileData(query: StockpileDataQuery = {}) {
             unsubscribe = MinReport.EntityManager.subscribeToEntity(
                 EXTENSION_NAME,
                 query.stockpileId,
-                (newData) => {
+                (newData: any) => {
                     setData([newData as StockpileAsset]);
                 }
             );

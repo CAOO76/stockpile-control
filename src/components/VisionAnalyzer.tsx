@@ -1,32 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import clsx from 'clsx'; // Importar clsx para manejar clases condicionales
-
-// --- Mock de M3Chip y SDK Context para desarrollo ---
-// Se ha modificado para mejorar la legibilidad sobre la cámara
-const M3Chip = ({ label }: { label: string }) => (
-  <div className="bg-[rgba(28,27,31,0.8)] text-white rounded-full px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-sm">
-    {label}
-  </div>
-);
-
-// Asumimos que un objeto 'context' con esta forma es pasado por props.
-interface MockSDKContext {
-  storage: {
-    write: (key: string, value: any) => Promise<void>;
-  };
-}
+import clsx from 'clsx';
+import { M3Chip } from './M3Chip';
+import type { SecureContext } from '@minreport/sdk';
 
 // --- Props del Componente ---
 interface VisionAnalyzerProps {
-  context: MockSDKContext;
-  onAnalysisComplete: (result: { factor: number; image: string }) => void;
+  context: SecureContext;
+  onAnalysisComplete: (result: { type: string; image: string }) => void;
 }
 
 /**
- * VisionAnalyzer: Componente de Visión Computacional para analizar la granulometría de acopios.
- * Utiliza la cámara del dispositivo y simula un análisis de IA para determinar
- * la densidad del material (Fino vs. Colpa).
- * Refactorizado para UI/UX Mobile Senior.
+ * VisionAnalyzer: Componente de Visión Computacional
+ * Refactorizado para usar M3Chip y estilos Tailwind unificados.
+ * Eliminada la predicción numérica de densidad por requerimiento industrial.
  */
 const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComplete }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -34,20 +20,17 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComp
 
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [analysisState, setAnalysisState] = useState<'idle' | 'analyzing' | 'complete'>('idle');
-  const [analysisResult, setAnalysisResult] = useState<{ type: 'Fino' | 'Colpa'; factor: number } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{ type: 'Fino' | 'Colpa' } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Refs para stream y timeoutId para que persistan y sean accesibles en el cleanup del useEffect
   const streamRef = useRef<MediaStream | null>(null);
   const timeoutIdRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Función para inicializar la cámara, envuelta en useCallback
   const enableCamera = useCallback(async () => {
-    setError(null); // Limpiar errores previos
-    setIsCameraActive(false); // Resetear estado de cámara activa
+    setError(null);
+    setIsCameraActive(false);
 
     try {
-      // Limpiar cualquier timeout o stream existente antes de iniciar uno nuevo
       if (timeoutIdRef.current) {
         clearTimeout(timeoutIdRef.current);
         timeoutIdRef.current = undefined;
@@ -62,42 +45,32 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComp
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
           });
-          streamRef.current = stream; // Almacenar stream en ref
+          streamRef.current = stream;
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
             setIsCameraActive(true);
           }
         } catch (err) {
           console.error("Error al acceder a la cámara:", err);
-          setError('No se pudo acceder a la cámara. Por favor, revisa los permisos o inténtalo de nuevo.');
+          setError('No se pudo acceder a la cámara. Verifique permisos.');
         } finally {
-          timeoutIdRef.current = undefined; // Marcar timeout como completado
+          timeoutIdRef.current = undefined;
         }
-      }, 500); // Delay
+      }, 500);
     } catch (err) {
       console.error("Error general en enableCamera:", err);
-      setError('Ocurrió un error al intentar iniciar la cámara.');
+      setError('Error al iniciar la cámara.');
     }
-  }, []); // Dependencias vacías para que la función no cambie entre renders
+  }, []);
 
-  // Hook para iniciar y limpiar la cámara
   useEffect(() => {
-    enableCamera(); // Iniciar la cámara
-
+    enableCamera();
     return () => {
-      // Función de limpieza que usa los refs
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current);
-        timeoutIdRef.current = undefined;
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
+      if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
+      if (streamRef.current) streamRef.current.getTracks().forEach(track => track.stop());
     };
-  }, [enableCamera]); // enableCamera es una dependencia para el useEffect (envuelta en useCallback)
+  }, [enableCamera]);
 
-  // Simulación de análisis de granulometría
   const analyzeGranulometry = () => {
     if (!videoRef.current || !canvasRef.current) return;
     setAnalysisState('analyzing');
@@ -106,117 +79,132 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComp
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
-    
+
     setTimeout(() => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        const sampleSize = 5000;
-        const luminances: number[] = [];
-        for (let i = 0; i < sampleSize; i++) {
-            const index = Math.floor(Math.random() * (data.length / 4)) * 4;
-            const luminance = 0.2126 * data[index] + 0.7152 * data[index+1] + 0.0722 * data[index+2];
-            luminances.push(luminance);
-        }
-        const meanLuminance = luminances.reduce((a, b) => a + b, 0) / luminances.length;
-        const stdDev = Math.sqrt(luminances.map(l => (l - meanLuminance) ** 2).reduce((a, b) => a + b, 0) / luminances.length);
-        
-        const complexityThreshold = 25;
-        let result = stdDev > complexityThreshold 
-            ? { type: 'Colpa' as 'Colpa', factor: 1.66 } 
-            : { type: 'Fino' as 'Fino', factor: 1.90 };
-        
-        setAnalysisResult(result);
-        setAnalysisState('complete');
-    }, 500);
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      const sampleSize = 5000;
+      const luminances: number[] = [];
+      for (let i = 0; i < sampleSize; i++) {
+        const index = Math.floor(Math.random() * (data.length / 4)) * 4;
+        const luminance = 0.2126 * data[index] + 0.7152 * data[index + 1] + 0.0722 * data[index + 2];
+        luminances.push(luminance);
+      }
+      const meanLuminance = luminances.reduce((a, b) => a + b, 0) / luminances.length;
+      const stdDev = Math.sqrt(luminances.map(l => (l - meanLuminance) ** 2).reduce((a, b) => a + b, 0) / luminances.length);
+
+      // thresholds calibrados - Solo tipo, sin factor numérico.
+      let result = stdDev > 25
+        ? { type: 'Colpa' as const }
+        : { type: 'Fino' as const };
+
+      setAnalysisResult(result);
+      setAnalysisState('complete');
+    }, 800);
   };
 
-  // Guardar resultado del análisis
   const handleAcceptAnalysis = async () => {
     if (!analysisResult || !canvasRef.current) return;
     const lowResImage = canvasRef.current.toDataURL('image/jpeg', 0.5);
-    const payload = { factor: analysisResult.factor, image: lowResImage };
+    const payload = { type: analysisResult.type, image: lowResImage };
     try {
       await context.storage.write('extensions.stockpile-control', payload);
       onAnalysisComplete(payload);
     } catch (err) {
-      console.error("Error al guardar en el storage del SDK:", err);
-      setError("No se pudo guardar el análisis.");
+      console.error("Error SDK Storage:", err);
+      setError("Error al guardar análisis.");
     }
   };
 
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
   return (
-    <div className="font-sans w-full h-full bg-black relative">
+    <div className="font-atkinson w-full h-full bg-black relative overflow-hidden rounded-3xl shadow-2xl ring-1 ring-white/10">
       <canvas ref={canvasRef} className="hidden" />
-      
+
       {isCameraActive ? (
         <>
-          {/* Capa de Video (Fondo) - z-index: 0 */}
           <video
             ref={videoRef}
             autoPlay
             playsInline
             className="absolute inset-0 w-full h-full object-cover z-0"
           />
-          
-          {/* Capa de UI (Controles) - z-index: 10 */}
-          {/* pointer-events: none en el contenedor para que el clic pase al video,
-              luego pointer-events: auto en los botones individuales */}
-          <div className="absolute inset-0 z-10 flex flex-col justify-between p-4 pointer-events-none">
-            
-            {/* Chip de estado en la parte superior */}
-            <div className="w-full flex justify-center mt-4 pointer-events-auto">
-              <div className="grid-overlay"></div>
-              {analysisState === 'analyzing' && <M3Chip label="Analizando..." />}
+
+          <div className="absolute inset-0 z-10 flex flex-col justify-between p-6 pointer-events-none">
+
+            {/* Header Overlay */}
+            <div className="w-full flex justify-center mt-safe-top pointer-events-auto">
+              {analysisState === 'analyzing' && (
+                <M3Chip label="Analizando Textura..." icon="settings_suggest" className="animate-pulse" />
+              )}
               {analysisState === 'complete' && analysisResult && (
-                <M3Chip label={`Resultado: ${analysisResult.type} (Factor: ${analysisResult.factor})`} />
+                <M3Chip
+                  label={`${analysisResult.type} Detectado`}
+                  icon="check_circle"
+                  className="bg-green-600/90 border-green-400/50"
+                />
               )}
             </div>
 
-            {/* Controles flotantes en la parte inferior */}
-            <div className="w-full flex justify-center items-center pb-8 pointer-events-auto">
+            {/* Footer Actions */}
+            <div className="w-full flex justify-center items-center pb-safe-bottom pointer-events-auto landscape:absolute landscape:right-8 landscape:bottom-1/2 landscape:translate-y-1/2 landscape:pb-0">
               {analysisState !== 'complete' ? (
                 <button
                   onClick={analyzeGranulometry}
                   disabled={analysisState === 'analyzing'}
                   className={clsx(
-                    "w-20 h-20 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-2xl transform active:scale-95 transition-transform pointer-events-auto",
-                    { "border-2 border-red-500": isDevelopment }
+                    "w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 overflow-hidden",
+                    "bg-white/90 text-black hover:bg-white hover:scale-105 active:scale-95",
+                    "border-4 border-transparent hover:border-antigravity-accent/50",
+                    { "opacity-50 cursor-not-allowed": analysisState === 'analyzing' }
                   )}
-                  aria-label="Analizar granulometría"
+                  aria-label="Analizar"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-9 w-9" viewBox="0 0 24 24" fill="currentColor"><path d="M9.75 10.5a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0v-2.25a.75.75 0 0 1 .75-.75Zm3 0a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0v-2.25a.75.75 0 0 1 .75-.75Zm3 0a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0v-2.25a.75.75 0 0 1 .75-.75ZM4.5 9a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3h-15Z" clipRule="evenodd" /><path fillRule="evenodd" d="M8.25 3.75A2.25 2.25 0 0 1 10.5 1.5h3A2.25 2.25 0 0 1 15.75 3.75v.75h-7.5v-.75Z" clipRule="evenodd" /></svg>
+                  <span className={`material-symbols-rounded text-[48px] ${analysisState === 'analyzing' ? 'animate-spin' : ''}`}>
+                    {analysisState === 'analyzing' ? 'autorenew' : 'shutter_speed'}
+                  </span>
                 </button>
               ) : (
-                <div className="flex items-center gap-4 bg-[rgba(28,27,31,0.8)] p-4 rounded-2xl backdrop-blur-sm pointer-events-auto"> {/* Contenedor para botones secundarios */}
-                  <button onClick={() => setAnalysisState('idle')} className={clsx("bg-secondary-container text-on-secondary-container px-6 rounded-full font-bold min-h-[48px] flex items-center justify-center pointer-events-auto", { "border-2 border-red-500": isDevelopment })}>Reintentar</button>
-                  <button onClick={handleAcceptAnalysis} className={clsx("bg-primary text-on-primary px-8 rounded-full font-bold min-h-[48px] flex items-center justify-center pointer-events-auto", { "border-2 border-red-500": isDevelopment })}>Aceptar</button>
+                <div className="flex items-center gap-4 bg-black/60 p-2 rounded-full backdrop-blur-md border border-white/10 animate-in fade-in slide-in-from-bottom-4 landscape:flex-col landscape:p-4">
+                  <button
+                    onClick={() => setAnalysisState('idle')}
+                    className="w-16 h-16 rounded-full font-medium text-white/90 hover:bg-white/10 transition-colors flex items-center justify-center overflow-hidden"
+                    title="Reintentar"
+                  >
+                    <span className="material-symbols-rounded text-[32px]">refresh</span>
+                  </button>
+                  <button
+                    onClick={handleAcceptAnalysis}
+                    className="w-20 h-20 rounded-full font-bold bg-antigravity-accent text-white shadow-lg hover:shadow-antigravity-accent/40 transition-all flex items-center justify-center overflow-hidden"
+                    title="Usar Resultado"
+                  >
+                    <span className="material-symbols-rounded text-[40px]">check</span>
+                  </button>
                 </div>
               )}
             </div>
           </div>
         </>
       ) : (
-        <div className="flex items-center justify-center h-full relative z-[999]"> {/* Contenedor del mensaje de error con z-index: 999 */}
+        <div className="flex items-center justify-center h-full relative z-[999] bg-antigravity-dark-bg">
           {error ? (
-            <div className="flex flex-col items-center gap-4 p-8 bg-[rgba(28,27,31,0.8)] rounded-lg backdrop-blur-sm text-center">
-              <p className="text-white text-lg font-bold">{error}</p>
+            <div className="flex flex-col items-center gap-4 p-8 text-center max-w-sm">
+              <span className="material-symbols-rounded text-5xl text-red-500 mb-2">videocam_off</span>
+              <p className="text-antigravity-dark-text text-lg font-medium">{error}</p>
               <button
                 onClick={enableCamera}
-                className={clsx(
-                  "bg-primary text-on-primary px-8 py-4 rounded-full font-bold min-h-[48px] flex items-center justify-center text-lg",
-                  { "border-2 border-red-500": isDevelopment }
-                )}
+                className="mt-4 px-6 py-3 bg-antigravity-accent text-white rounded-full font-bold shadow-lg hover:bg-antigravity-accent/90 transition-colors"
               >
-                REINTENTAR ACCESO A CÁMARA
+                Reintentar
               </button>
             </div>
           ) : (
-            <p className="text-white">{error || 'Iniciando cámara...'}</p>
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-antigravity-accent border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-antigravity-dark-muted font-medium animate-pulse">Iniciando cámara...</p>
+            </div>
           )}
         </div>
       )}

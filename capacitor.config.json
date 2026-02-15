@@ -1,0 +1,6 @@
+{
+  "appId": "com.minreport.stockpilecontrol",
+  "appName": "stockpile-control",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

@@ -1,11 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-25..0&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /**
- * Estilos para VisionAnalyzer
+ * Industrial Mining Design System
+ * Flat colors only, sharp edges, high contrast
+ */
+
+/* Industrial Borders - Sharp 4px */
+.industrial-border {
+  border-radius: 4px;
+}
+
+/* Camera Overlay - Pure Black Background */
+.camera-overlay {
+  background-color: #000000;
+}
+
+/* iOS Mobile Adjustments */
+@supports (-webkit-touch-callout: none) {
+  .h-screen-ios {
+    height: -webkit-fill-available;
+  }
+}
+
+/**
+ * Grid Overlay for VisionAnalyzer (Technical)
  */
 .grid-overlay {
   position: absolute;
@@ -45,16 +69,19 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: 'Atkinson Hyperlegible', sans-serif !important;
-  font-size: 16px; /* min-size: 16px para compensar dpi */
+  font-size: 16px;
+  /* min-size: 16px para compensar dpi */
+  background-color: #000000;
+  /* Pure black for industrial theme */
 }
 
 #root {
   width: 100%;
-  height: 100vh; /* Cambiado de min-height a height */
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Asegura que no haya scroll no deseado */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); /* Safe Area */
+  overflow: hidden;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 /* Fix para Inputs en modo oscuro de Android */
@@ -63,15 +90,26 @@ input[type="search"],
 input[type="number"],
 input[type="email"],
 textarea {
-  @apply bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2;
+  @apply bg-transparent dark:bg-[#1a1a1a] border border-white/20 industrial-border px-3 py-2;
+}
+
+/* Hide Scrollbar Utility */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Material Symbols Helper */
+.material-symbols-outlined,
 .material-symbols-rounded {
-  font-family: 'Material Symbols Rounded';
+  font-family: inherit;
+  /* Should be set by specific symbol class */
   font-weight: normal;
   font-style: normal;
-  font-size: 24px;
   line-height: 1;
   letter-spacing: normal;
   text-transform: none;
@@ -79,6 +117,44 @@ textarea {
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
-  -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+}
+
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+}
+
+@media print {
+
+  /* Hide everything on the page */
+  body>* {
+    visibility: hidden !important;
+  }
+
+  /* Show only the PDF report component */
+  #stitch-pdf-summary,
+  #stitch-pdf-summary * {
+    visibility: visible !important;
+  }
+
+  #stitch-pdf-summary {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: block !important;
+    background-color: white !important;
+    color: black !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
 }
