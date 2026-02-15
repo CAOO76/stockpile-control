@@ -107,23 +107,59 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                 >
                     <span className="material-symbols-outlined text-4xl text-primary">arrow_back</span>
                 </button>
-                <div className="flex flex-col items-end">
-                    <h1 className="text-lg font-black tracking-tight text-white/95 uppercase">{assetName || 'ACTIVO'}</h1>
+
+                <div className="flex items-center gap-4">
+                    {/* Botón Ignorar / Restaurar */}
+                    <button
+                        onClick={async () => {
+                            if (!measurement) return;
+                            const isIgnored = !!measurement.ignored;
+                            const msg = isIgnored
+                                ? '¿Restaurar esta medición? Volverá a contar para el inventario.'
+                                : '¿Ignorar esta medición? Se excluirá de los cálculos pero NO se borrará.';
+
+                            if (confirm(msg)) {
+                                await dataService.toggleIgnoreMeasurement(measurement.id, measurementId, isIgnored);
+                            }
+                        }}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all active:scale-95
+                            ${measurement.ignored
+                                ? 'bg-red-500/20 border-red-500 text-red-500'
+                                : 'bg-white/5 border-white/10 text-white/40 hover:text-white hover:bg-white/10'}`}
+                        title={measurement.ignored ? "Restaurar Medición" : "Ignorar Medición"}
+                    >
+                        <span className="material-symbols-outlined text-2xl">
+                            {measurement.ignored ? 'restore_from_trash' : 'remove_selection'}
+                        </span>
+                    </button>
+
                     <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-black tracking-[0.2em] text-white/40 uppercase">
-                            {new Date(measurement.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
-                        </span>
-                        <span className="text-[9px] font-black tracking-widest text-primary/60 uppercase mt-0.5">
-                            {GEOMETRY_NAMES[measurement.geometry?.type || ''] || 'GEOMETRÍA NO DEFINIDA'}
-                        </span>
+                        <h1 className="text-lg font-black tracking-tight text-white/95 uppercase">{assetName || 'ACTIVO'}</h1>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-black tracking-[0.2em] text-white/40 uppercase">
+                                {new Date(measurement.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}
+                            </span>
+                            <span className="text-[9px] font-black tracking-widest text-primary/60 uppercase mt-0.5">
+                                {GEOMETRY_NAMES[measurement.geometry?.type || ''] || 'GEOMETRÍA NO DEFINIDA'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </header>
 
             {/* Content: High Contrast & Giant Metrics */}
-            <div className="flex-1 overflow-y-auto hide-scrollbar">
+            <div className="flex-1 overflow-y-auto hide-scrollbar relative">
+
+                {/* Banner de Ignorado */}
+                {measurement.ignored && (
+                    <div className="sticky top-0 z-40 bg-red-600/90 backdrop-blur text-white py-2 px-6 flex items-center justify-center gap-3 shadow-2xl">
+                        <span className="material-symbols-outlined text-xl">warning</span>
+                        <span className="text-[10px] font-black tracking-[0.2em] uppercase">MEDICIÓN IGNORADA • NO CALCULA INVENTARIO</span>
+                    </div>
+                )}
+
                 {/* Hero Evidence: Technical Cut */}
-                <div className="relative w-full aspect-[16/10] bg-black border-b border-white/10 group">
+                <div className={`relative w-full aspect-[16/10] bg-black border-b border-white/10 group ${measurement.ignored ? 'grayscale opacity-50' : ''}`}>
                     <img
                         src={measurement.photo_url}
                         className="w-full h-full object-cover grayscale-[0.2] group-active:grayscale-0 transition-all duration-700"
@@ -132,13 +168,13 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-60"></div>
                 </div>
 
-                <div className="px-6 -mt-10 relative z-10 space-y-10 pb-32">
+                <div className={`px-6 -mt-10 relative z-10 space-y-10 pb-32 ${measurement.ignored ? 'opacity-50 pointer-events-none' : ''}`}>
                     {/* Primary Metrics: Ultra Visual Ergonomics */}
                     <div className="space-y-4">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em] mb-1">VOLUMEN CALCULADO</span>
                             <div className="flex items-baseline gap-3">
-                                <span className="text-7xl font-black text-primary tracking-tighter leading-none">
+                                <span className={`text-7xl font-black tracking-tighter leading-none ${measurement.ignored ? 'text-white/20 decoration-line-through' : 'text-primary'}`}>
                                     {measurement.volumen_m3.toFixed(1)}
                                 </span>
                                 <span className="text-2xl font-black text-primary/40 uppercase tracking-tighter italic">m³</span>

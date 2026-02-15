@@ -17,18 +17,25 @@ export const StockList: React.FC<StockListProps> = ({ onSelectAsset, onBack }) =
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const loadAssets = async () => {
-            try {
-                const data = await dataService.getAllAssets();
-                // Ordenar por fecha de creación descendente
-                setAssets(data.sort((a, b) => b.createdAt - a.createdAt));
-            } catch (err) {
-                console.error('[StockList] Error loading assets:', err);
-            } finally {
-                setLoading(false);
-            }
+        let unsubscribe: (() => void) | undefined;
+        let mounted = true;
+
+        const init = () => {
+            unsubscribe = dataService.subscribeToAllAssets((data) => {
+                if (mounted) {
+                    // Ordenar por fecha de creación descendente
+                    setAssets(data.sort((a, b) => b.createdAt - a.createdAt));
+                    setLoading(false);
+                }
+            });
         };
-        loadAssets();
+
+        init();
+
+        return () => {
+            mounted = false;
+            if (unsubscribe) unsubscribe();
+        };
     }, []);
 
     const getClaseColor = (clase: string) => {
@@ -95,8 +102,8 @@ export const StockList: React.FC<StockListProps> = ({ onSelectAsset, onBack }) =
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-0.5">
                                         <h3 className="text-sm font-bold tracking-tight text-white/90 truncate uppercase">{asset.name}</h3>
-                                        <span className={`text-[8px] font-black uppercase tracking-widest ${getClaseColor(asset.clase)}`}>
-                                            {asset.clase.replace('_', ' ')}
+                                        <span className={`text-[8px] font-black uppercase tracking-widest ${getClaseColor(asset.clase || '')}`}>
+                                            {(asset.clase || '').replace('_', ' ')}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center text-[10px] text-white/30 font-medium">

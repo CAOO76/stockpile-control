@@ -13,28 +13,44 @@ import { M3TextField } from './M3TextField';
 import { M3Badge } from './M3Badge';
 import { SDKButton } from './SDKButton';
 import { calculationEngine } from '../services/calculation-engine';
-import { dataService, type StockpileData } from '../services/DataService';
+import { dataService } from '../services/DataService';
+import type { StockpileAsset } from '../types/StockpileAsset';
 
 /**
  * DesktopAnalytics v2.0.0 - Gestión de Inventario y Conciliación de Romana
  */
 export const DesktopAnalytics: React.FC = () => {
-    const [assets, setAssets] = useState<StockpileData[]>([]);
+    const [assets, setAssets] = useState<StockpileAsset[]>([]);
     const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
     const [realWeightInput, setRealWeightInput] = useState('');
     const [materialProfiles, setMaterialProfiles] = useState<Record<string, number>>({});
 
     // Carga inicial reactiva via context.storage.read (Simulado a través de DataService)
     useEffect(() => {
+        let unsubscribe: (() => void) | undefined;
+        let mounted = true;
+
         const init = async () => {
-            const [data, profiles] = await Promise.all([
-                dataService.getAllAssets(),
-                dataService.getMaterialProfiles()
-            ]);
-            setAssets(data);
-            setMaterialProfiles(profiles);
+            try {
+                // 1. Cargar perfiles de material (configuración estática)
+                const profiles = await dataService.getMaterialProfiles();
+                if (mounted) setMaterialProfiles(profiles);
+
+                // 2. Suscribirse a cambios en activos (tiempo real)
+                unsubscribe = dataService.subscribeToAllAssets((data) => {
+                    if (mounted) setAssets(data);
+                });
+            } catch (error) {
+                console.error('[Analytics] Error initializing:', error);
+            }
         };
+
         init();
+
+        return () => {
+            mounted = false;
+            if (unsubscribe) unsubscribe();
+        };
     }, []);
 
     const selectedAsset = useMemo(() =>
@@ -80,7 +96,7 @@ export const DesktopAnalytics: React.FC = () => {
     const handleSaveScaleWeight = async () => {
         if (!selectedAsset || !reconciliation) return;
 
-        const updated: StockpileData = {
+        const updated: StockpileAsset = {
             ...selectedAsset,
             peso_romana: parseFloat(realWeightInput),
             factor_real: reconciliation.realFactor,

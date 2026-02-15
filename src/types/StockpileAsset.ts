@@ -31,6 +31,18 @@ export interface StockpileAsset {
     last_photo_url?: string;
     last_measured_at?: number;
 
+    // --- LEGACY COMPATIBILITY for DesktopAnalytics ---
+    volumen?: number;
+    peso_final_toneladas?: number;
+    tipo_granulometria?: 'COLPAS' | 'GRANSA' | 'MIXTO' | 'FINOS';
+    peso_romana?: number | null;
+    factor_real?: number;
+    metadata?: {
+        conciliado?: boolean;
+        fecha_conciliacion?: number;
+        [key: string]: any;
+    };
+
     // Historial se maneja como una subcolección o array de mediciones
 }
 
@@ -88,4 +100,7 @@ export interface StockpileMeasurement {
     // Deltas vs Medición Anterior (Calculados en runtime o guardado)
     delta_volumen?: number;
     delta_peso?: number;
+
+    // Estado Logico
+    ignored?: boolean; // Si true, esta medición se excluye de cálculos y gráficos (pero no se borra)
 }

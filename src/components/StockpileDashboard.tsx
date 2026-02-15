@@ -87,6 +87,12 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
         }
     }, [generatingPdf, shareImmediately, asset]);
 
+    const validHistory = React.useMemo(() => history.filter(m => !m.ignored), [history]);
+
+    const lastM = validHistory[0];
+    const prevM = validHistory[1];
+    const deltaVol = lastM && prevM ? lastM.volumen_m3 - prevM.volumen_m3 : 0;
+
     if (loading || !asset) {
         return (
             <div className="h-screen w-screen bg-black flex items-center justify-center">
@@ -94,10 +100,6 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
             </div>
         );
     }
-
-    const lastM = history[0];
-    const prevM = history[1];
-    const deltaVol = lastM && prevM ? lastM.volumen_m3 - prevM.volumen_m3 : 0;
 
     return (
         <main className="h-screen w-screen bg-[#0a0a0a] flex flex-col font-atkinson text-white overflow-hidden">
@@ -214,7 +216,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                 return (
                                     <div className="p-4 rounded-[20px] border border-white/10 bg-white/5 flex items-center justify-center">
                                         <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest text-center">
-                                            SIN DATOS DE GPS EN EL HISTORIAL ({lastM.id})
+                                            SIN DATOS DE GPS EN EL HISTORIAL ({lastM?.id})
                                         </p>
                                     </div>
                                 );
@@ -281,29 +283,28 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                         </div>
 
                         <div className="grid grid-cols-1 gap-2">
-                            {history.slice(0, 10).map((m, idx) => (
+                            {history.slice(0, 10).map((m) => (
                                 <div
                                     key={m.id}
                                     onClick={() => onSelectMeasurement(m.id)}
-                                    className="flex items-center gap-4 p-3 bg-white/3 rounded-2xl border border-white/5 active:bg-white/10 transition-all cursor-pointer"
+                                    className={`flex items-center gap-4 p-3 rounded-2xl border transition-all cursor-pointer ${m.ignored ? 'bg-red-500/5 border-red-500/10 opacity-50' : 'bg-white/3 border-white/5 active:bg-white/10'}`}
                                 >
                                     <div className="w-12 h-12 rounded-xl overflow-hidden bg-black shrink-0 border border-white/10">
                                         <img src={m.photo_url} className="w-full h-full object-cover grayscale opacity-40" />
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-black text-white/80">{m.volumen_m3.toFixed(1)} m³</span>
+                                            <span className="text-sm font-black text-white/80 strike-through">{m.volumen_m3.toFixed(1)} m³</span>
                                             <span className="text-[8px] font-bold text-white/20 uppercase tracking-tighter">
                                                 {new Date(m.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
                                             </span>
                                         </div>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[9px] font-bold text-white/15 uppercase tracking-widest">
-                                                {m.method}
-                                            </span>
-                                            {idx < history.length - 1 && (
-                                                <span className={`text-[9px] font-black ${m.volumen_m3 >= history[idx + 1].volumen_m3 ? 'text-green-500/40' : 'text-red-500/40'}`}>
-                                                    {m.volumen_m3 >= history[idx + 1].volumen_m3 ? '▲' : '▼'}
+                                            {m.ignored ? (
+                                                <span className="text-[8px] font-black text-red-500 uppercase tracking-widest bg-red-500/10 px-1.5 py-0.5 rounded">IGNORADO</span>
+                                            ) : (
+                                                <span className="text-[9px] font-bold text-white/15 uppercase tracking-widest">
+                                                    {m.method}
                                                 </span>
                                             )}
                                         </div>
@@ -415,7 +416,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
 
                     <StockpileStitchSummary
                         asset={asset}
-                        history={history}
+                        history={validHistory}
                     />
                 </div>
             )}

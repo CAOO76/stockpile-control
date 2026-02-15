@@ -70,7 +70,10 @@ export class DataService {
                 last_volume_m3: measurement.volumen_m3,
                 last_weight_t: measurement.peso_t,
                 last_photo_url: measurement.photo_url,
-                last_measured_at: measurement.timestamp
+                last_measured_at: measurement.timestamp,
+                // Legacy compatibility for DesktopAnalytics
+                volumen: measurement.volumen_m3,
+                peso_final_toneladas: measurement.peso_t
             }, { merge: true });
 
             return mId;
@@ -114,7 +117,7 @@ export class DataService {
      */
     async getAllAssets(): Promise<StockpileAsset[]> {
         const snap = await getDocs(collection(this.db, this.ASSETS_PATH));
-        return snap.docs.map(d => d.data() as StockpileAsset);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() }) as StockpileAsset);
     }
 
     /**
@@ -123,6 +126,16 @@ export class DataService {
     subscribeToAsset(id: string, callback: (data: StockpileAsset | null) => void): Unsubscribe {
         return onSnapshot(doc(this.db, this.ASSETS_PATH, id), (snap) => {
             callback(snap.exists() ? snap.data() as StockpileAsset : null);
+        });
+    }
+
+    /**
+     * Suscripción en tiempo real a TODOS los activos
+     */
+    subscribeToAllAssets(callback: (data: StockpileAsset[]) => void): Unsubscribe {
+        return onSnapshot(collection(this.db, this.ASSETS_PATH), (snap) => {
+            const assets = snap.docs.map(d => ({ id: d.id, ...d.data() }) as StockpileAsset);
+            callback(assets);
         });
     }
 
@@ -178,6 +191,61 @@ export class DataService {
      */
     async saveStockpileData(data: Partial<StockpileAsset>, id: string): Promise<void> {
         await setDoc(doc(this.db, this.ASSETS_PATH, id), data, { merge: true });
+    }
+
+    /**
+     * Alternar estado de "Ignorado" de una medición.
+     * Si se ignora, se debe recalcular el "último estado válido" del activo.
+     */
+    async toggleIgnoreMeasurement(measurementId: string, assetId: string, currentIgnoredStatus: boolean): Promise<void> {
+        const newStatus = !currentIgnoredStatus;
+        const measurementRef = doc(this.db, this.MEASUREMENTS_PATH, measurementId);
+        const assetRef = doc(this.db, this.ASSETS_PATH, assetId);
+
+        try {
+            // 1. Actualizar estado de la medición
+            await setDoc(measurementRef, { ignored: newStatus }, { merge: true });
+
+            // 2. Recalcular estado del Activo
+            // Obtener todas las mediciones ordenadas por fecha descendente
+            const measurements = await this.getMeasurements(assetId);
+
+            // Filtrar las que NO están ignoradas (incluyendo la que acabamos de cambiar)
+            const updatedMeasurements = measurements.map(m =>
+                m.id === measurementId ? { ...m, ignored: newStatus } : m
+            );
+
+            // Buscar la más reciente válida
+            const validMeasurement = updatedMeasurements.find(m => !m.ignored);
+
+            if (validMeasurement) {
+                // Restaurar estado a la última válida
+                await setDoc(assetRef, {
+                    last_volume_m3: validMeasurement.volumen_m3,
+                    last_weight_t: validMeasurement.peso_t,
+                    last_photo_url: validMeasurement.photo_url,
+                    last_measured_at: validMeasurement.timestamp,
+                    // Legacy compatibility
+                    volumen: validMeasurement.volumen_m3,
+                    peso_final_toneladas: validMeasurement.peso_t
+                }, { merge: true });
+            } else {
+                // No quedan mediciones validas -> Resetear a 0
+                await setDoc(assetRef, {
+                    last_volume_m3: 0,
+                    last_weight_t: 0,
+                    last_photo_url: null,
+                    last_measured_at: null,
+                    // Legacy compatibility
+                    volumen: 0,
+                    peso_final_toneladas: 0
+                }, { merge: true });
+            }
+
+        } catch (error) {
+            console.error('[DataService] Error toggleIgnoreMeasurement:', error);
+            throw error;
+        }
     }
 }
 
