@@ -35,21 +35,42 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let unsubscribe: (() => void) | undefined;
+        let mounted = true;
+
         const loadDetail = async () => {
             try {
-                const data = await dataService.getMeasurement(measurementId);
-                setMeasurement(data);
-                if (data?.assetId) {
-                    const asset = await dataService.getAsset(data.assetId);
-                    if (asset) setAssetName(asset.name);
-                }
+                // 1. Suscribirse a la medición en tiempo real
+                unsubscribe = dataService.subscribeToMeasurement(measurementId, async (data) => {
+                    if (!mounted) return;
+
+                    if (data) {
+                        setMeasurement(data);
+                        // Cargar nombre del activo si no lo tenemos
+                        if (data.assetId && !assetName) {
+                            try {
+                                const asset = await dataService.getAsset(data.assetId);
+                                if (asset && mounted) setAssetName(asset.name);
+                            } catch (e) { console.warn('Error loading asset name', e); }
+                        }
+                    } else {
+                        console.warn('[Detail] Measurement not found');
+                    }
+                    setLoading(false);
+                });
+
             } catch (error) {
-                console.error('[Detail] Error loading:', error);
-            } finally {
-                setLoading(false);
+                console.error('[Detail] Error setting up subscription:', error);
+                if (mounted) setLoading(false);
             }
         };
+
         loadDetail();
+
+        return () => {
+            mounted = false;
+            if (unsubscribe) unsubscribe();
+        };
     }, [measurementId]);
 
     const renderDimensionRow = (key: string, value: number) => (

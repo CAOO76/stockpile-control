@@ -14,13 +14,13 @@ interface VisionAnalyzerProps {
  * Refactorizado para usar M3Chip y estilos Tailwind unificados.
  * Eliminada la predicción numérica de densidad por requerimiento industrial.
  */
-const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComplete }) => {
+const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ onAnalysisComplete }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [analysisState, setAnalysisState] = useState<'idle' | 'analyzing' | 'complete'>('idle');
-  const [analysisResult, setAnalysisResult] = useState<{ type: 'Fino' | 'Colpa' } | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{ mean_luminance: number; std_dev: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const streamRef = useRef<MediaStream | null>(null);
@@ -96,12 +96,10 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComp
       const meanLuminance = luminances.reduce((a, b) => a + b, 0) / luminances.length;
       const stdDev = Math.sqrt(luminances.map(l => (l - meanLuminance) ** 2).reduce((a, b) => a + b, 0) / luminances.length);
 
-      // thresholds calibrados - Solo tipo, sin factor numérico.
-      let result = stdDev > 25
-        ? { type: 'Colpa' as const }
-        : { type: 'Fino' as const };
-
-      setAnalysisResult(result);
+      setAnalysisResult({
+        mean_luminance: parseFloat(meanLuminance.toFixed(2)),
+        std_dev: parseFloat(stdDev.toFixed(2))
+      });
       setAnalysisState('complete');
     }, 800);
   };
@@ -109,13 +107,17 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComp
   const handleAcceptAnalysis = async () => {
     if (!analysisResult || !canvasRef.current) return;
     const lowResImage = canvasRef.current.toDataURL('image/jpeg', 0.5);
-    const payload = { type: analysisResult.type, image: lowResImage };
+    const payload = {
+      type: 'texture_signature',
+      image: lowResImage,
+      features: analysisResult
+    };
     try {
-      await context.storage.write('extensions.stockpile-control', payload);
-      onAnalysisComplete(payload);
+      // We don't save to SDK storage here anymore, we pass it up to MobileScanner
+      onAnalysisComplete(payload as any);
     } catch (err) {
-      console.error("Error SDK Storage:", err);
-      setError("Error al guardar análisis.");
+      console.error("Error Analysis Completion:", err);
+      setError("Error al procesar captura.");
     }
   };
 
@@ -137,13 +139,13 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComp
             {/* Header Overlay */}
             <div className="w-full flex justify-center mt-safe-top pointer-events-auto">
               {analysisState === 'analyzing' && (
-                <M3Chip label="Analizando Textura..." icon="settings_suggest" className="animate-pulse" />
+                <M3Chip label="Escaneando Textura..." icon="sensors" className="animate-pulse" />
               )}
               {analysisState === 'complete' && analysisResult && (
                 <M3Chip
-                  label={`${analysisResult.type} Detectado`}
+                  label="Firma de Textura Capturada"
                   icon="check_circle"
-                  className="bg-green-600/90 border-green-400/50"
+                  className="bg-primary/20 border-primary/50 text-primary"
                 />
               )}
             </div>
@@ -157,7 +159,7 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComp
                   className={clsx(
                     "w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 overflow-hidden",
                     "bg-white/90 text-black hover:bg-white hover:scale-105 active:scale-95",
-                    "border-4 border-transparent hover:border-antigravity-accent/50",
+                    "border-4 border-transparent hover:border-primary/50",
                     { "opacity-50 cursor-not-allowed": analysisState === 'analyzing' }
                   )}
                   aria-label="Analizar"
@@ -177,7 +179,7 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ context, onAnalysisComp
                   </button>
                   <button
                     onClick={handleAcceptAnalysis}
-                    className="w-20 h-20 rounded-full font-bold bg-antigravity-accent text-white shadow-lg hover:shadow-antigravity-accent/40 transition-all flex items-center justify-center overflow-hidden"
+                    className="w-20 h-20 rounded-full font-bold bg-primary text-black shadow-lg hover:shadow-primary/40 transition-all flex items-center justify-center overflow-hidden"
                     title="Usar Resultado"
                   >
                     <span className="material-symbols-rounded text-[40px]">check</span>

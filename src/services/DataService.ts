@@ -141,6 +141,15 @@ export class DataService {
     }
 
     /**
+     * Suscripción en tiempo real a una medición específica
+     */
+    subscribeToMeasurement(id: string, callback: (data: StockpileMeasurement | null) => void): Unsubscribe {
+        return onSnapshot(doc(this.db, this.MEASUREMENTS_PATH, id), (snap) => {
+            callback(snap.exists() ? { id: snap.id, ...snap.data() } as StockpileMeasurement : null);
+        });
+    }
+
+    /**
      * Obtener Perfiles de Material (Factores de Densidad)
      */
     async getMaterialProfiles(): Promise<Record<string, number>> {

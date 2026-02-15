@@ -59,10 +59,30 @@ export interface StockpileMeasurement {
         accuracy: number;
     };
 
+    // Usuario que realizó la medición (Trazabilidad)
+    user_id?: string;
+
     // Detalles de Geometría (Si aplica)
     geometry?: {
         type: string;
         dimensions: Record<string, number>;
+    };
+
+    // --- NUEVOS CAMPOS PARA APRENDIZAJE IA (MODO DIGITAL) ---
+    operator_classification?: 'COLPA' | 'GRANSA' | 'FINO';
+    operator_density?: number;
+    texture_features?: {
+        mean_luminance: number;
+        std_dev: number;
+        [key: string]: number;
+    };
+    imu_data?: {
+        alpha: number | null; // Giroscopio
+        beta: number | null;
+        gamma: number | null;
+        accel_x: number | null; // Acelerómetro
+        accel_y: number | null;
+        accel_z: number | null;
     };
 
     // Deltas vs Medición Anterior (Calculados en runtime o guardado)
