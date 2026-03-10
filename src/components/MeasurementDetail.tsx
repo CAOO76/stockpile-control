@@ -19,6 +19,13 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
     const apiKey = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY;
 
     useEffect(() => {
+        if (initialMeasurement) {
+            setMeasurement(initialMeasurement);
+            setLoading(false);
+        }
+    }, [initialMeasurement]);
+
+    useEffect(() => {
         if (!initialMeasurement && measurementId) {
             setLoading(true);
             dataService.getMeasurement(measurementId).then(m => {
