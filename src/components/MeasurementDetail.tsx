@@ -61,30 +61,32 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
 
             <div className="flex-1 flex flex-col">
                 
-                {/* SECTION A: VISUAL EVIDENCE (STACKED) */}
-                <div className="border-b border-white/10 flex flex-col bg-zinc-950">
-                    <div className="aspect-video border-b border-white/5 relative p-4">
-                        <div className="w-full h-full border border-white/5 overflow-hidden">
-                            <img 
-                                src={measurement.photo_url} 
-                                className="w-full h-full object-cover grayscale brightness-75 hover:grayscale-0 hover:brightness-100 transition-all duration-300" 
-                                alt=""
-                            />
+                {/* SECTION A: VISUAL EVIDENCE (BINARIA - HORIZONTAL) */}
+                <div className="border-b border-white/10 grid grid-cols-2 h-48 bg-zinc-950">
+                    <div className="border-r border-white/10 relative overflow-hidden group">
+                        <img 
+                            src={measurement.photo_url} 
+                            className="w-full h-full object-cover grayscale brightness-75 hover:grayscale-0 hover:brightness-100 transition-all duration-300" 
+                            alt=""
+                        />
+                        <div className="absolute bottom-2 left-3 z-10">
+                            <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] bg-black/60 px-2 py-0.5">VISTA_TERRENO</span>
                         </div>
                     </div>
-                    <div className="aspect-video relative p-4 bg-black">
-                        <div className="w-full h-full border border-white/5 overflow-hidden">
-                            {apiKey && measurement.location_metadata ? (
-                                <img 
-                                    src={`https://maps.googleapis.com/maps/api/staticmap?center=${measurement.location_metadata.lat},${measurement.location_metadata.lng}&zoom=18&size=800x400&maptype=satellite&scale=2&markers=color:0xC68346%7C${measurement.location_metadata.lat},${measurement.location_metadata.lng}&key=${apiKey}`}
-                                    className="w-full h-full object-cover opacity-60 grayscale"
-                                    alt=""
-                                />
-                            ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900/50">
-                                    <span className="text-[8px] font-mono opacity-20">GPS_DATA_UNAVAILABLE</span>
-                                </div>
-                            )}
+                    <div className="relative overflow-hidden group bg-black">
+                        {apiKey && measurement.location_metadata ? (
+                            <img 
+                                src={`https://maps.googleapis.com/maps/api/staticmap?center=${measurement.location_metadata.lat},${measurement.location_metadata.lng}&zoom=18&size=400x400&maptype=satellite&scale=2&markers=color:0xC68346%7C${measurement.location_metadata.lat},${measurement.location_metadata.lng}&key=${apiKey}`}
+                                className="w-full h-full object-cover opacity-60 grayscale hover:opacity-100 transition-all duration-300"
+                                alt=""
+                            />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900/50">
+                                <span className="text-[8px] font-mono opacity-20 text-white">GPS_OFFLINE</span>
+                            </div>
+                        )}
+                        <div className="absolute bottom-2 right-3 z-10 text-right">
+                            <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] bg-black/60 px-2 py-0.5">GEORREFERENCIA</span>
                         </div>
                     </div>
                 </div>
@@ -92,68 +94,61 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                 {/* SECTION B: ANALYTICAL DATA */}
                 <div className="flex flex-col bg-black">
                     
-                    {/* VOLUMETRY BLOCK */}
-                    <div className="p-10 border-b border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                        <div className="space-y-8">
-                            <div>
-                                <label className="text-[12px] font-black text-[#C68346]/60 block mb-3 tracking-[0.3em] uppercase">VOLUMEN_M3</label>
-                                <div className="text-5xl font-black font-mono tracking-tighter text-white leading-none">
-                                    {measurement.volumen_m3.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-base opacity-20 font-sans tracking-normal">m³</span>
-                                </div>
+                    {/* VOLUMETRY BLOCK (DUAL KPI) */}
+                    <div className="p-6 border-b border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[12px] font-black text-[#C68346]/60 block mb-2 tracking-[0.3em] uppercase">VOLUMEN_M3</label>
+                            <div className="text-4xl font-black font-mono tracking-tighter text-white leading-none">
+                                {measurement.volumen_m3.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="text-sm opacity-20 font-sans tracking-normal">m³</span>
                             </div>
-                            <div>
-                                <label className="text-[12px] font-black text-[#C68346]/60 block mb-3 tracking-[0.3em] uppercase">PESO_TON</label>
-                                <div className="text-5xl font-black font-mono tracking-tighter text-white leading-none">
-                                    {measurement.peso_t.toLocaleString('es-CL', { maximumFractionDigits: 0 })} <span className="text-base opacity-20 font-sans tracking-normal">t</span>
-                                </div>
+                        </div>
+                        <div className="border-l border-white/5 pl-4">
+                            <label className="text-[12px] font-black text-[#C68346]/60 block mb-2 tracking-[0.3em] uppercase">PESO_TON</label>
+                            <div className="text-4xl font-black font-mono tracking-tighter text-white leading-none">
+                                {measurement.peso_t.toLocaleString('es-CL', { maximumFractionDigits: 0 })} <span className="text-sm opacity-20 font-sans tracking-normal">t</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* METADATA BLOCK */}
-                    <div className="p-10 grid grid-cols-2 gap-x-8 gap-y-10">
+                    {/* METADATA BLOCK (COMPACT) */}
+                    <div className="p-6 grid grid-cols-2 gap-x-6 gap-y-6">
                         <div>
-                            <label className="text-[12px] font-black opacity-30 block mb-2 tracking-[0.2em] uppercase">FECHA</label>
+                            <label className="text-[12px] font-black opacity-30 block mb-1 tracking-[0.2em] uppercase">FECHA</label>
                             <div className="text-base font-black font-mono uppercase text-white/90">
                                 {date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[12px] font-black opacity-30 block mb-2 tracking-[0.2em] uppercase">HORA</label>
+                            <label className="text-[12px] font-black opacity-30 block mb-1 tracking-[0.2em] uppercase">HORA</label>
                             <div className="text-base font-black font-mono uppercase text-white/90">
                                 {date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[12px] font-black opacity-30 block mb-2 tracking-[0.2em] uppercase">OPERADOR</label>
+                            <label className="text-[12px] font-black opacity-30 block mb-1 tracking-[0.2em] uppercase">OPERADOR</label>
                             <div className="text-base font-black font-mono uppercase text-[#C68346]">
                                 @{measurement.user_id?.toUpperCase() || 'SYS_ENGINE'}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[12px] font-black opacity-30 block mb-2 tracking-[0.2em] uppercase">MÉTODO</label>
+                            <label className="text-[12px] font-black opacity-30 block mb-1 tracking-[0.2em] uppercase">MÉTODO</label>
                             <div className="text-sm font-black font-mono uppercase opacity-50">
                                 [{measurement.method}]
                             </div>
                         </div>
-
-                        <div className="col-span-2 pt-4">
-                            <div className="bg-zinc-950 border border-white/10 p-4 font-mono text-[10px] space-y-2">
-                                <div className="flex justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-[7px] opacity-20 uppercase mb-0.5">LAT</span>
-                                        <span className="font-bold">{measurement.location_metadata?.lat || '0.000000'}</span>
-                                    </div>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[7px] opacity-20 uppercase mb-0.5">LNG</span>
-                                        <span className="font-bold">{measurement.location_metadata?.lng || '0.000000'}</span>
-                                    </div>
+                        <div className="col-span-2 pt-2">
+                             <div className="bg-zinc-950/50 border border-white/5 p-4 font-mono text-[9px] flex justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-[7px] opacity-20 uppercase mb-0.5">COORD_GPS</span>
+                                    <span className="font-bold opacity-60 tracking-tighter">
+                                        {measurement.location_metadata?.lat.toFixed(6)}, {measurement.location_metadata?.lng.toFixed(6)}
+                                    </span>
                                 </div>
-                                <div className="flex justify-center text-[#C68346] pt-1.5 border-t border-white/5">
-                                    <span className="text-[7px] opacity-20 uppercase mr-2 tracking-widest">PRECISIÓN_GPS</span>
-                                    <span className="font-bold text-[9px]">{measurement.location_metadata?.accuracy.toFixed(2)}M</span>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[7px] opacity-20 uppercase mb-0.5">ESTRATO_ERGO</span>
+                                    <span className="font-bold text-[#C68346] tracking-tighter">ISO_COMPLIANT</span>
                                 </div>
-                            </div>
+                             </div>
                         </div>
                     </div>
                 </div>
