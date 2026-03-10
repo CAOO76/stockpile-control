@@ -91,31 +91,27 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                     </div>
                 </div>
                 
-                {/* GPS COORDINATES STRIP (CONTEXTO INMEDIATO) */}
-                <div className="bg-zinc-950 border-b border-white/10 px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-8">
-                        <div className="flex flex-col">
-                            <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">LATITUD</span>
-                            <span className="text-[14px] font-bold font-mono text-white/90 tabular-nums">
-                                {measurement.location_metadata?.lat.toFixed(6) || '0.000000'}
-                            </span>
-                        </div>
-                        <div className="w-px h-8 bg-white/10"></div>
-                        <div className="flex flex-col">
-                            <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">LONGITUD</span>
-                            <span className="text-[14px] font-bold font-mono text-white/90 tabular-nums">
-                                {measurement.location_metadata?.lng.toFixed(6) || '0.000000'}
-                            </span>
-                        </div>
+                {/* GPS COORDINATES STRIP (ESTANDARIZADO) */}
+                <div className="bg-zinc-950 border-b border-white/10 px-6 py-4 flex items-center gap-10">
+                    <div className="flex flex-col">
+                        <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">LATITUD</span>
+                        <span className="text-[14px] font-bold font-mono text-white/90 tabular-nums">
+                            {measurement.location_metadata?.lat.toFixed(6) || '0.000000'}
+                        </span>
                     </div>
-                    <div className="flex items-center gap-3 bg-[#C68346]/10 px-4 py-2 border border-[#C68346]/20">
-                        <span className="material-symbols-outlined text-[18px] text-[#C68346]">satellite_alt</span>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.1em] leading-none mb-1">PRECISIÓN_H</span>
-                            <span className="text-[14px] font-bold font-mono text-[#C68346]">
-                                ±{measurement.location_metadata?.accuracy.toFixed(1)}M
-                            </span>
-                        </div>
+                    <div className="w-px h-8 bg-white/10"></div>
+                    <div className="flex flex-col">
+                        <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">LONGITUD</span>
+                        <span className="text-[14px] font-bold font-mono text-white/90 tabular-nums">
+                            {measurement.location_metadata?.lng.toFixed(6) || '0.000000'}
+                        </span>
+                    </div>
+                    <div className="w-px h-8 bg-white/10"></div>
+                    <div className="flex flex-col">
+                        <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">PRECISIÓN_H</span>
+                        <span className="text-[14px] font-bold font-mono text-[#C68346] tabular-nums">
+                            ±{measurement.location_metadata?.accuracy.toFixed(1)}M
+                        </span>
                     </div>
                 </div>
 
