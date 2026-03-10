@@ -326,6 +326,29 @@ export const DesktopAnalytics: React.FC = () => {
                                         </div>
                                     </div>
 
+                                    {/* GPS TRACEABILITY STRIP (MAIN WORKSPACE) */}
+                                    <div className="bg-white/[0.02] border border-white/5 px-8 py-4 mb-6 flex items-center justify-between">
+                                        <div className="flex items-center gap-12">
+                                            <div className="flex flex-col">
+                                                <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2">LATITUD_CENTRAL</span>
+                                                <span className="text-[18px] font-bold font-mono text-white/90 tabular-nums">
+                                                    {selectedAsset.geo_point?.latitude.toFixed(6) || '0.000000'}
+                                                </span>
+                                            </div>
+                                            <div className="w-px h-10 bg-white/10"></div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2">LONGITUD_CENTRAL</span>
+                                                <span className="text-[18px] font-bold font-mono text-white/90 tabular-nums">
+                                                    {selectedAsset.geo_point?.longitude.toFixed(6) || '0.000000'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-[#C68346]/10 px-4 py-2 border border-[#C68346]/20">
+                                            <span className="material-symbols-outlined text-[20px] text-[#C68346]">my_location</span>
+                                            <span className="text-[12px] font-black text-[#C68346] uppercase tracking-widest text-shadow-glow">ORIGEN_GEO_VALIDADO</span>
+                                        </div>
+                                    </div>
+
                                     {/* TECHNICAL EVIDENCE PAIR (BOTTOM) */}
                                     <div className="grid grid-cols-2 gap-6 h-64">
                                         {/* LAST CAPTURE PHOTO */}

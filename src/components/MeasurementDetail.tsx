@@ -90,6 +90,29 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                         </div>
                     </div>
                 </div>
+                
+                {/* GPS COORDINATES STRIP (CONTEXTO INMEDIATO) */}
+                <div className="bg-zinc-950 border-b border-white/10 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <div className="flex flex-col">
+                            <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">LATITUD</span>
+                            <span className="text-[14px] font-bold font-mono text-white/90 tabular-nums">
+                                {measurement.location_metadata?.lat.toFixed(6) || '0.000000'}
+                            </span>
+                        </div>
+                        <div className="w-px h-8 bg-white/10"></div>
+                        <div className="flex flex-col">
+                            <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">LONGITUD</span>
+                            <span className="text-[14px] font-bold font-mono text-white/90 tabular-nums">
+                                {measurement.location_metadata?.lng.toFixed(6) || '0.000000'}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 bg-[#C68346]/10 px-3 py-2 rounded-sm border border-[#C68346]/20">
+                        <span className="material-symbols-outlined text-[16px] text-[#C68346]">satellite_alt</span>
+                        <span className="text-[11px] font-black text-[#C68346] uppercase tracking-wider">±{measurement.location_metadata?.accuracy.toFixed(1)}M</span>
+                    </div>
+                </div>
 
                 {/* SECTION B: ANALYTICAL DATA */}
                 <div className="flex flex-col bg-black">
@@ -135,20 +158,6 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                             <div className="text-sm font-black font-mono uppercase opacity-50">
                                 [{measurement.method}]
                             </div>
-                        </div>
-                        <div className="col-span-2 pt-2">
-                             <div className="bg-zinc-950/50 border border-white/5 p-4 font-mono text-[9px] flex justify-between">
-                                <div className="flex flex-col">
-                                    <span className="text-[7px] opacity-20 uppercase mb-0.5">COORD_GPS</span>
-                                    <span className="font-bold opacity-60 tracking-tighter">
-                                        {measurement.location_metadata?.lat.toFixed(6)}, {measurement.location_metadata?.lng.toFixed(6)}
-                                    </span>
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[7px] opacity-20 uppercase mb-0.5">ESTRATO_ERGO</span>
-                                    <span className="font-bold text-[#C68346] tracking-tighter">ISO_COMPLIANT</span>
-                                </div>
-                             </div>
                         </div>
                     </div>
                 </div>
