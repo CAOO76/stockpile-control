@@ -5,8 +5,6 @@ import { dataService } from '../services/DataService';
 interface MeasurementDetailProps {
     measurement?: StockpileMeasurement;
     measurementId?: string;
-    onClose?: () => void;
-    onBack?: () => void;
 }
 
 /**
@@ -14,12 +12,11 @@ interface MeasurementDetailProps {
  * Estándar: Elite Industrial Minimalism (Blueprint Mode)
  * Soporta carga directa via objeto (Desktop) o diferida via ID (Mobile).
  */
-export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measurement: initialMeasurement, measurementId, onClose, onBack }) => {
+export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measurement: initialMeasurement, measurementId }) => {
     const [measurement, setMeasurement] = useState<StockpileMeasurement | null>(initialMeasurement || null);
     const [loading, setLoading] = useState(!initialMeasurement && !!measurementId);
     
     const apiKey = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY;
-    const handleClose = onClose || onBack;
 
     useEffect(() => {
         if (!initialMeasurement && measurementId) {
@@ -48,17 +45,11 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
             {/* TOP BAR: TECHNICAL IDENTIFIER */}
             <div className="h-14 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-950 sticky top-0 z-10">
                 <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black opacity-20 uppercase tracking-widest mr-2">ID_REGISTRO</span>
-                    <span className="text-xs font-mono font-bold text-[#C68346] tracking-tighter">
+                    <span className="text-[12px] font-black opacity-30 uppercase tracking-widest mr-2">ID_DOSSIER</span>
+                    <span className="text-sm font-mono font-bold text-[#C68346] tracking-tighter">
                         {measurement.id.toUpperCase()}
                     </span>
                 </div>
-                <button 
-                    onClick={handleClose}
-                    className="h-14 w-14 border-l border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors group"
-                >
-                    <span className="material-symbols-outlined text-xl opacity-20 group-hover:opacity-100">close</span>
-                </button>
             </div>
 
             <div className="flex-1 flex flex-col">

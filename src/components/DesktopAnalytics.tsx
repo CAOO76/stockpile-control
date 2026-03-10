@@ -117,6 +117,8 @@ export const DesktopAnalytics: React.FC = () => {
         }
     };
 
+    const currentMeasurement = selectedMeasurement || (selectedAssetId ? (measurements[selectedAssetId] || [])[0] : null);
+
     return (
         <div className="h-screen bg-[#0a0a0a] text-white font-atkinson flex flex-col antialiased overflow-hidden select-none">
             
@@ -183,7 +185,8 @@ export const DesktopAnalytics: React.FC = () => {
                                         key={asset.id} 
                                         onClick={() => {
                                             setSelectedAssetId(asset.id!);
-                                            setSelectedMeasurement(null);
+                                            const assetMeas = measurements[asset.id!] || [];
+                                            setSelectedMeasurement(assetMeas[0] || null);
                                         }}
                                         className={`p-6 border-b border-white/[0.05] cursor-pointer transition-all hover:bg-white/[0.03] flex flex-col gap-4 relative ${isSelected ? 'bg-[#C68346]/10' : ''}`}
                                     >
@@ -409,13 +412,12 @@ export const DesktopAnalytics: React.FC = () => {
                         )}
                     </section>
 
-                    {/* PILLAR 4: MEASUREMENT DETAIL (DOSSIER) - w-[400px] */}
-                    <section className="w-[400px] flex flex-col bg-[#050505] overflow-hidden relative">
-                        {selectedMeasurement ? (
+                    {/* PILLAR 4: MEASUREMENT DETAIL (DOSSIER PERSISTENTE) - w-[400px] */}
+                    <section className="w-[400px] flex flex-col bg-[#050505] overflow-hidden relative border-l border-white/5">
+                        {currentMeasurement ? (
                             <div className="flex-1 overflow-hidden animate-in fade-in duration-300">
                                 <MeasurementDetail 
-                                    measurement={selectedMeasurement} 
-                                    onClose={() => setSelectedMeasurement(null)} 
+                                    measurement={currentMeasurement} 
                                 />
                             </div>
                         ) : (
