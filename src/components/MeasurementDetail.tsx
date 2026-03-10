@@ -98,14 +98,14 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                     <div className="p-8 border-b border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
                         <div className="space-y-6">
                             <div>
-                                <label className="text-[9px] font-black text-[#C68346]/40 block mb-1 tracking-widest uppercase">VOLUMEN_M3</label>
-                                <div className="text-5xl font-black font-mono tracking-tighter text-white">
+                                <label className="text-[10px] font-black text-[#C68346]/40 block mb-2 tracking-[0.2em] uppercase">VOLUMEN_M3</label>
+                                <div className="text-4xl font-black font-mono tracking-tighter text-white">
                                     {measurement.volumen_m3.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs opacity-20">m³</span>
                                 </div>
                             </div>
                             <div>
-                                <label className="text-[9px] font-black text-[#C68346]/40 block mb-1 tracking-widest uppercase">PESO_TON</label>
-                                <div className="text-5xl font-black font-mono tracking-tighter text-white">
+                                <label className="text-[10px] font-black text-[#C68346]/40 block mb-2 tracking-[0.2em] uppercase">PESO_TON</label>
+                                <div className="text-4xl font-black font-mono tracking-tighter text-white">
                                     {measurement.peso_t.toLocaleString('es-CL', { maximumFractionDigits: 0 })} <span className="text-xs opacity-20">t</span>
                                 </div>
                             </div>
@@ -115,26 +115,26 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                     {/* METADATA BLOCK */}
                     <div className="p-8 grid grid-cols-2 gap-x-6 gap-y-8">
                         <div>
-                            <label className="text-[9px] font-bold opacity-20 block mb-1 tracking-widest uppercase">FECHA</label>
-                            <div className="text-[11px] font-black font-mono uppercase">
+                            <label className="text-[10px] font-bold opacity-20 block mb-1 tracking-[0.2em] uppercase">FECHA</label>
+                            <div className="text-xs font-black font-mono uppercase">
                                 {date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[9px] font-bold opacity-20 block mb-1 tracking-widest uppercase">HORA</label>
-                            <div className="text-[11px] font-black font-mono uppercase">
+                            <label className="text-[10px] font-bold opacity-20 block mb-1 tracking-[0.2em] uppercase">HORA</label>
+                            <div className="text-xs font-black font-mono uppercase">
                                 {date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[9px] font-bold opacity-20 block mb-1 tracking-widest uppercase">OPERADOR</label>
-                            <div className="text-[11px] font-black font-mono uppercase text-[#C68346]">
+                            <label className="text-[10px] font-bold opacity-20 block mb-1 tracking-[0.2em] uppercase">OPERADOR</label>
+                            <div className="text-xs font-black font-mono uppercase text-[#C68346]">
                                 @{measurement.user_id?.toUpperCase() || 'SYS_ENGINE'}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[9px] font-bold opacity-20 block mb-1 tracking-widest uppercase">MÉTODO</label>
-                            <div className="text-[11px] font-black font-mono uppercase opacity-40">
+                            <label className="text-[10px] font-bold opacity-20 block mb-1 tracking-[0.2em] uppercase">MÉTODO</label>
+                            <div className="text-xs font-black font-mono uppercase opacity-40">
                                 [{measurement.method}]
                             </div>
                         </div>
