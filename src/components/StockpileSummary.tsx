@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import type { StockpileAsset, StockpileMeasurement } from '../types/StockpileAsset';
 
-interface StockpileStitchSummaryProps {
+interface StockpileSummaryProps {
     asset: StockpileAsset;
     history: StockpileMeasurement[];
 }
@@ -12,35 +12,71 @@ interface StockpileStitchSummaryProps {
  * Simplified for Android compatibility - no CORS mode, direct fetch
  */
 const toDataURL = async (url: string): Promise<string | null> => {
-    console.log('[PDF Summary] Loading image:', url);
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            console.error('[PDF Summary] HTTP Error:', response.status, response.statusText);
-            return null;
+    if (!url) return null;
+    
+    // NO BYPASS: Forzamos que incluso los Data URIs pasen por el procesador 
+    // para "limpiarlos" y optimizarlos via Canvas. Esto ayuda al WebView de Android.
+    
+    // Attempt 1: Fetch (Best for Remote URLs / Maps)
+    if (url.startsWith('http')) {
+        try {
+            console.log('[PDF Summary] Fetching remote:', url.substring(0, 50));
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(blob);
+            });
+        } catch (e) {
+            console.warn('[PDF Summary] Fetch failed, using fallback:', e);
         }
-        const blob = await response.blob();
-        return new Promise(resolve => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                console.log('[PDF Summary] Image converted to DataURL successfully');
-                resolve(reader.result as string);
-            };
-            reader.onerror = (e) => {
-                console.error('[PDF Summary] FileReader error:', e);
-                resolve(null);
-            };
-            reader.readAsDataURL(blob);
-        });
-    } catch (e) {
-        console.error('[PDF Summary] Failed to load image:', url, e);
-        return null;
     }
+
+    // Attempt 2: Image loader + Canvas (Best for Local URIs, Base64 and Fallback)
+    return new Promise((resolve) => {
+        const img = new Image();
+        if (url.startsWith('http')) img.crossOrigin = 'Anonymous';
+        
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                // Redimensionamos ligeramente si es muy grande para no colapsar memoria móvil
+                const maxDim = 1000;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    const ratio = Math.min(maxDim / w, maxDim / h);
+                    w *= ratio;
+                    h *= ratio;
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return resolve(null);
+                ctx.drawImage(img, 0, 0, w, h);
+                const data = canvas.toDataURL('image/jpeg', 0.8); // Compresión 0.8 para PDF ligero
+                console.log('[PDF Summary] Canvas process success (len:', data.length, ')');
+                resolve(data);
+            } catch (e) {
+                console.error('[PDF Summary] Canvas error:', e);
+                resolve(null);
+            }
+        };
+        img.onerror = (e) => {
+            console.error('[PDF Summary] Image loading error:', e);
+            resolve(null);
+        };
+        img.src = url;
+    });
 };
 
-export const StockpileStitchSummary: React.FC<StockpileStitchSummaryProps> = ({ asset, history }) => {
+export const StockpileSummary: React.FC<StockpileSummaryProps> = ({ asset, history }) => {
     const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
     const [mapDataUrl, setMapDataUrl] = useState<string | null>(null);
+    const [photoLoaded, setPhotoLoaded] = useState(false);
+    const [mapLoaded, setMapLoaded] = useState(false);
     const [isReady, setIsReady] = useState(false);
 
     // Get data from LAST measurement
@@ -86,7 +122,7 @@ export const StockpileStitchSummary: React.FC<StockpileStitchSummaryProps> = ({ 
 
             if (GOOGLE_MAPS_KEY && lat !== '---' && lng !== '---') {
                 // Build Static Maps URL
-                const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=18&size=600x400&maptype=satellite&scale=2&format=png&markers=color:0xff6b00%7C${lat},${lng}&key=${GOOGLE_MAPS_KEY}`;
+                const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=18&size=600x400&maptype=satellite&scale=2&format=png&markers=color:0xC68346%7C${lat},${lng}&key=${GOOGLE_MAPS_KEY}`;
                 console.log('[PDF Summary] Map URL (key hidden):', staticMapUrl.replace(GOOGLE_MAPS_KEY, 'HIDDEN'));
 
                 const data = await toDataURL(staticMapUrl);
@@ -104,16 +140,29 @@ export const StockpileStitchSummary: React.FC<StockpileStitchSummaryProps> = ({ 
                 });
             }
 
-            console.log('[PDF Summary] === Pre-load complete - signaling ready ===');
-            setIsReady(true);
+            console.log('[PDF Summary] === Pre-load complete ===');
         };
 
         loadImages();
     }, [lastM, lat, lng]);
 
+    // Final check for ready status: wait for DOM to actually render the images
+    useEffect(() => {
+        const hasPhoto = !!(lastM?.photo_url || asset.last_photo_url || asset.initial_photo_url);
+        const hasMap = !!((import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY && lat !== '---');
+
+        const photoOk = !hasPhoto || photoLoaded;
+        const mapOk = !hasMap || mapLoaded;
+
+        if (photoOk && mapOk && (photoDataUrl || mapDataUrl)) {
+            console.log('[PDF Summary] 🚀 All images rendered in DOM, marking READY');
+            setIsReady(true);
+        }
+    }, [photoLoaded, mapLoaded, photoDataUrl, mapDataUrl, lastM, asset, lat]);
+
     return (
         <div
-            id="stitch-pdf-summary"
+            id="stockpile-report"
             data-ready={isReady ? "true" : "false"}
             className="w-[210mm] bg-white text-black font-atkinson flex flex-col"
             style={{ width: '210mm' }}
@@ -161,17 +210,52 @@ export const StockpileStitchSummary: React.FC<StockpileStitchSummaryProps> = ({ 
                     <div className="relative border-2 border-black bg-zinc-100 overflow-hidden">
                         <div className="absolute top-2 left-2 z-10 bg-black text-white px-2 py-0.5 text-[8px] font-black uppercase tracking-widest">ESTADO ACTUAL</div>
                         {photoDataUrl ? (
-                            <img src={photoDataUrl} className="w-full h-full object-cover" alt="Stockpile" />
+                            <img 
+                                src={photoDataUrl} 
+                                className="w-full h-full object-cover" 
+                                alt="Stockpile" 
+                                onLoad={() => {
+                                    console.log('[PDF Summary] Photo DOM load complete');
+                                    setPhotoLoaded(true);
+                                }}
+                                onError={() => {
+                                    console.error('[PDF Summary] Photo DOM load FAILED');
+                                    setPhotoLoaded(true); // Don't block PDF
+                                }}
+                            />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-[10px] opacity-30">SIN FOTO DISPONIBLE</div>
                         )}
                     </div>
-                    <div className="relative border-2 border-black bg-zinc-100 overflow-hidden">
+                    <div className="relative border-2 border-black bg-zinc-100 overflow-hidden h-full">
                         <div className="absolute top-2 left-2 z-10 bg-white text-black border border-black px-2 py-0.5 text-[8px] font-black uppercase tracking-widest">GEORREF ÚLTIMA MEDICIÓN</div>
                         {mapDataUrl ? (
-                            <img src={mapDataUrl} className="w-full h-full object-cover" alt="Map" />
+                            <img 
+                                src={mapDataUrl} 
+                                className="w-full h-full object-cover" 
+                                alt="Map" 
+                                onLoad={() => {
+                                    console.log('[PDF Summary] Map DOM load complete');
+                                    setMapLoaded(true);
+                                }}
+                                onError={() => {
+                                    console.error('[PDF Summary] Map DOM load FAILED');
+                                    setMapLoaded(true); // Don't block PDF
+                                }}
+                            />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[10px] opacity-30 px-4 text-center">MAPA NO DISPONIBLE</div>
+                            <div className="w-full h-full flex flex-col items-center justify-center relative bg-zinc-50 border-4 border-black/5 m-4 w-[calc(100%-2rem)] h-[calc(100%-2rem)]">
+                                {/* Geometric grid background */}
+                                <div className="absolute inset-0 opacity-10 bg-[linear-gradient(black_1px,transparent_1px),linear-gradient(90deg,black_1px,transparent_1px)] [background-size:20px_20px]"></div>
+                                
+                                <div className="z-10 bg-white border-2 border-black p-4 text-center">
+                                    <span className="material-symbols-outlined text-4xl mb-2 opacity-80">satellite_alt</span>
+                                    <div className="text-[10px] font-black uppercase tracking-widest bg-black text-white px-2 py-1 mb-2">MODO OFFLINE</div>
+                                    <div className="font-mono text-[9px] font-bold">LAT: {lat}</div>
+                                    <div className="font-mono text-[9px] font-bold">LNG: {lng}</div>
+                                </div>
+                                <div className="absolute bottom-2 right-2 text-[6px] font-black opacity-30 tracking-[0.2em]">NO MAP DATA</div>
+                            </div>
                         )}
                     </div>
                 </section>
@@ -213,7 +297,7 @@ export const StockpileStitchSummary: React.FC<StockpileStitchSummaryProps> = ({ 
                 </section>
 
                 <footer className="mt-auto pt-6 border-t-4 border-black flex justify-between items-end opacity-60">
-                    <div className="text-[9px] font-mono leading-tight"><p>PÁGINA 1: RESUMEN EJECUTIVO</p><p>GENERADO POR MINREPORT STITCH v3.2</p></div>
+                    <div className="text-[9px] font-mono leading-tight"><p>PÁGINA 1: RESUMEN EJECUTIVO</p><p>GENERADO POR MINREPORT STOCKPILE CONTROL v3.2</p></div>
                     <div className="text-right"><div className="w-40 border-b-2 border-black mb-1"></div><p className="text-[8px] font-black uppercase tracking-widest">FIRMA TÉCNICA CONTROL</p></div>
                 </footer>
             </div>

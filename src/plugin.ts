@@ -17,9 +17,9 @@ export class StockpileControlPlugin {
     constructor() {
         this.config = {
             name: 'stockpile-control',
-            version: '2.0.0',
+            version: '2.1.0',
             description: 'Plugin de control y monitoreo de stockpile para MINREPORT',
-            author: 'MINREPORT Team',
+            author: 'MinReport Engineering',
         };
     }
 

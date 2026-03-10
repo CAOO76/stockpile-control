@@ -32,7 +32,7 @@ export const StockpileReport: React.FC<StockpileReportProps> = ({ asset, history
 
             {/* Snapshot */}
             <section className="grid grid-cols-3 gap-6 mb-12">
-                <div className="p-6 border-2 border-black rounded-3xl bg-[#f5f5f5]">
+                <div className="p-6 border-2 border-black rounded-none bg-[#f5f5f5]">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#777] mb-2">VOLUMEN ACTUAL</p>
                     <p className="text-5xl font-black tracking-tighter">{asset.last_volume_m3?.toFixed(1) || '0.0'}<span className="text-lg ml-1 opacity-50">m³</span></p>
                     <div className={`flex items-center gap-1 mt-2 text-sm font-bold ${deltaVol >= 0 ? 'text-green-700' : 'text-red-700'}`}>
@@ -40,11 +40,11 @@ export const StockpileReport: React.FC<StockpileReportProps> = ({ asset, history
                         <span>{Math.abs(deltaPerc).toFixed(1)}% vs anterior</span>
                     </div>
                 </div>
-                <div className="p-6 border border-[#ddd] rounded-3xl">
+                <div className="p-6 border border-[#ddd] rounded-none">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#777] mb-2">TONELAJE ESTIMADO</p>
                     <p className="text-4xl font-black tracking-tighter">{asset.last_weight_t?.toFixed(1) || '0.0'}<span className="text-lg ml-1 opacity-50">t</span></p>
                 </div>
-                <div className="p-6 border border-[#ddd] rounded-3xl">
+                <div className="p-6 border border-[#ddd] rounded-none">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#777] mb-2">DENSIDAD PROMEDIO</p>
                     <p className="text-4xl font-black tracking-tighter">{lastM?.density_factor?.toFixed(2) || '1.66'}<span className="text-lg ml-1 opacity-50">t/m³</span></p>
                 </div>
@@ -52,7 +52,7 @@ export const StockpileReport: React.FC<StockpileReportProps> = ({ asset, history
 
             {/* Evidence (Side by Side) */}
             <section className="grid grid-cols-2 gap-6 mb-12 h-64">
-                <div className="rounded-3xl overflow-hidden border border-[#ddd] relative bg-black flex items-center justify-center">
+                <div className="rounded-none overflow-hidden border border-[#ddd] relative bg-black flex items-center justify-center">
                     {/* Image disabled for debugging hang */}
                     <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
                         <span className="text-white/20 text-xs font-bold uppercase">IMAGEN DESHABILITADA POR DIAGNÓSTICO</span>
@@ -65,12 +65,12 @@ export const StockpileReport: React.FC<StockpileReportProps> = ({ asset, history
                         alt="Evidencia Visual"
                     />
                     */}
-                    <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest backdrop-blur-md">
+                    <div className="absolute bottom-4 left-4 bg-black/60 text-white px-3 py-1 rounded-none text-[10px] font-bold uppercase tracking-widest backdrop-blur-md">
                         EVIDENCIA CRONOLÓGICA
                     </div>
                 </div>
                 {lastM?.location_metadata && (
-                    <div className="rounded-3xl overflow-hidden border border-[#ddd] relative bg-[#eee] flex items-center justify-center">
+                    <div className="rounded-none overflow-hidden border border-[#ddd] relative bg-[#eee] flex items-center justify-center">
                         {/* Static Map Disabled to prevent PDF hang (CORS/API Key issues) */}
                         {/* 
                         <img

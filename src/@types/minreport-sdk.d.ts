@@ -1,5 +1,5 @@
-// Definiciones TypeScript para el SDK de MINREPORT v2.0.0
-// Objetivo: Establecer el contrato técnico blindado y las definiciones del SDK 2.0.0.
+// Definiciones TypeScript para el SDK de MINREPORT v2.1.0
+// Objetivo: Establecer el contrato técnico blindado y las definiciones del SDK 2.1.0.
 
 declare module '@minreport/sdk' {
     /**
@@ -68,6 +68,12 @@ declare module '@minreport/sdk' {
         version: string;
         description?: string;
         author?: string;
+        marketplace?: {
+            category: string;
+            tags: string[];
+            featured: boolean;
+        };
+        thirdPartySupport?: boolean;
     }
 
     /**
@@ -80,6 +86,14 @@ declare module '@minreport/sdk' {
     }
 
     /**
+     * Componentes de UI del SDK (Elite Industrial Minimalism Refresh)
+     */
+    export type SDKSwitch = any;
+    export type SDKBadge = any;
+    export type SDKMetric = any;
+    export type SDKIcon = any;
+
+    /**
      * Utilidades del SDK
      */
     export const SDK: {
@@ -90,10 +104,19 @@ declare module '@minreport/sdk' {
 
     /**
      * MinReport Global Object
-     * Se ha eliminado MinReport.Data para favorecer el uso de SecureContext.
      */
     export const MinReport: {
         EntityManager: any;
         Core: CoreAPI;
     };
+
+    /**
+     * Ciclo de vida del Plugin
+     */
+    export interface PluginLifeCycle {
+        onActivate?(): Promise<void>;
+        onDeactivate?(): Promise<void>;
+        onInit?(context: SecureContext): Promise<void>;
+        onData?(data: any): Promise<void>;
+    }
 }

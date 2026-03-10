@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Stockpile Control',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
+    androidScheme: 'http',
     cleartext: true
   }
 };

@@ -88,7 +88,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ stockpileDat
                         </div>
                         <div className="flex overflow-x-auto gap-4 snap-x snap-mandatory hide-scrollbar pb-4">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex-none w-72 h-48 landscape:w-64 landscape:h-40 snap-center rounded-[2px] overflow-hidden bg-white/5 border border-white/10">
+                                <div key={i} className="flex-none w-72 h-48 landscape:w-64 landscape:h-40 snap-center rounded-none overflow-hidden bg-white/5 border border-white/10">
                                     <img
                                         alt={`Vista de acopio ${i}`}
                                         className="w-full h-full object-cover opacity-60 mix-blend-luminosity hover:opacity-100 transition-opacity"
@@ -123,12 +123,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ stockpileDat
                     {/* Main FAB (Industrial 80px target) */}
                     <button
                         onClick={onNewScan}
-                        className="w-20 h-20 landscape:w-16 landscape:h-16 bg-primary text-black rounded-full flex items-center justify-center -translate-y-8 landscape:-translate-y-4 shadow-[0_0_30px_rgba(255,176,0,0.5)] active:scale-90 transition-all overflow-hidden"
+                        className="w-20 h-20 landscape:w-16 landscape:h-16 bg-primary text-black rounded-none flex items-center justify-center -translate-y-8 landscape:-translate-y-4 shadow-[0_0_30px_rgba(255,176,0,0.5)] active:scale-90 transition-all overflow-hidden"
                     >
                         <span className="material-symbols-outlined text-[40px] font-black leading-none">add</span>
                     </button>
 
-                    <button className="flex flex-col items-center space-y-1 text-primary active:bg-primary/5 w-16 h-16 justify-center rounded-full transition-all overflow-hidden">
+                    <button className="flex flex-col items-center space-y-1 text-primary active:bg-primary/5 w-16 h-16 justify-center rounded-none transition-all overflow-hidden">
                         <span className="material-symbols-outlined text-[32px]">analytics</span>
                         <span className="text-[8px] font-bold uppercase tracking-widest opacity-0 scale-0 landscape:opacity-100 landscape:scale-100 transition-all">Reporte</span>
                     </button>

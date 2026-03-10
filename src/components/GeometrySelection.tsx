@@ -22,7 +22,7 @@ export const GeometrySelection: React.FC<GeometrySelectionProps> = ({ onSelectio
             {/* Header Técnico */}
             <header className="absolute top-0 left-0 w-full pt-14 pb-4 px-6 flex items-center justify-between z-50 bg-gradient-to-b from-black/80 to-transparent">
                 <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center active:scale-90 transition-transform">
+                    <button onClick={onBack} className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center active:scale-90 transition-transform">
                         <span className="material-symbols-outlined text-3xl text-primary">arrow_back</span>
                     </button>
                     <div className="flex flex-col">
@@ -46,9 +46,9 @@ export const GeometrySelection: React.FC<GeometrySelectionProps> = ({ onSelectio
                 {/* 1º CONO ELÍPTICO */}
                 <button
                     onClick={() => onSelection('CONO_ELIPTICO')}
-                    className="w-full max-w-xs h-24 bg-white/5 border border-white/10 rounded-2xl flex items-center px-6 gap-6 active:scale-95 active:bg-primary active:text-black transition-all group"
+                    className="w-full max-w-xs h-24 bg-white/5 border border-white/10 rounded-none flex items-center px-6 gap-6 active:scale-95 active:bg-primary active:text-black transition-all group"
                 >
-                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-active:bg-black/20">
+                    <div className="w-14 h-14 rounded-none bg-primary/10 flex items-center justify-center group-active:bg-black/20">
                         <span className="material-symbols-outlined text-3xl text-primary group-active:text-black">category</span>
                     </div>
                     <div className="flex flex-col items-start">
@@ -60,9 +60,9 @@ export const GeometrySelection: React.FC<GeometrySelectionProps> = ({ onSelectio
                 {/* 2º CONO ELÍPTICO TRUNCADO */}
                 <button
                     onClick={() => onSelection('CONO_ELIPTICO_TRUNCADO')}
-                    className="w-full max-w-xs h-24 bg-white/5 border border-white/10 rounded-2xl flex items-center px-6 gap-6 active:scale-95 active:bg-primary active:text-black transition-all group"
+                    className="w-full max-w-xs h-24 bg-white/5 border border-white/10 rounded-none flex items-center px-6 gap-6 active:scale-95 active:bg-primary active:text-black transition-all group"
                 >
-                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-active:bg-black/20">
+                    <div className="w-14 h-14 rounded-none bg-primary/10 flex items-center justify-center group-active:bg-black/20">
                         <span className="material-symbols-outlined text-3xl text-primary group-active:text-black">layers</span>
                     </div>
                     <div className="flex flex-col items-start">
@@ -74,9 +74,9 @@ export const GeometrySelection: React.FC<GeometrySelectionProps> = ({ onSelectio
                 {/* 3º CONO TRUNCADO POR PERÍMETRO */}
                 <button
                     onClick={() => onSelection('CONO_TRUNCADO_PERIMETRO')}
-                    className="w-full max-w-xs h-24 bg-white/5 border border-white/10 rounded-2xl flex items-center px-6 gap-6 active:scale-95 active:bg-primary active:text-black transition-all group"
+                    className="w-full max-w-xs h-24 bg-white/5 border border-white/10 rounded-none flex items-center px-6 gap-6 active:scale-95 active:bg-primary active:text-black transition-all group"
                 >
-                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-active:bg-black/20">
+                    <div className="w-14 h-14 rounded-none bg-primary/10 flex items-center justify-center group-active:bg-black/20">
                         <span className="material-symbols-outlined text-3xl text-primary group-active:text-black">architecture</span>
                     </div>
                     <div className="flex flex-col items-start">

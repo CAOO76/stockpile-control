@@ -20,7 +20,7 @@ export const CaptureSelection: React.FC<CaptureSelectionProps> = ({ onSelection,
         >
             {/* Header: Solo botón de retorno y branding sutil */}
             <header className="absolute top-0 left-0 w-full pt-14 px-6 flex items-center justify-between z-50">
-                <button onClick={onBack} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center active:scale-90 transition-transform">
+                <button onClick={onBack} className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center active:scale-90 transition-transform">
                     <span className="material-symbols-outlined text-3xl text-primary">arrow_back</span>
                 </button>
                 <div className="w-12 h-12 flex items-center justify-center opacity-20">
@@ -47,7 +47,7 @@ export const CaptureSelection: React.FC<CaptureSelectionProps> = ({ onSelection,
                     <div className="flex flex-col items-center gap-4">
                         <button
                             onClick={() => onSelection('digital')}
-                            className="w-32 h-32 rounded-full bg-primary/5 border-2 border-primary/30 flex items-center justify-center active:scale-90 active:bg-primary active:text-black transition-all group shadow-[0_0_30px_rgba(255,176,0,0.05)]"
+                            className="w-32 h-32 rounded-none bg-primary/5 border-2 border-primary/30 flex items-center justify-center active:scale-90 active:bg-primary active:text-black transition-all group shadow-[0_0_30px_rgba(255,176,0,0.05)]"
                         >
                             <span className="material-symbols-outlined text-[56px] text-primary group-active:text-black">mobile_camera</span>
                         </button>
@@ -61,7 +61,7 @@ export const CaptureSelection: React.FC<CaptureSelectionProps> = ({ onSelection,
                     <div className="flex flex-col items-center gap-4">
                         <button
                             onClick={() => onSelection('manual')}
-                            className="w-32 h-32 rounded-full bg-white/5 border-2 border-white/10 flex items-center justify-center active:scale-90 active:bg-white active:text-black transition-all group"
+                            className="w-32 h-32 rounded-none bg-white/5 border-2 border-white/10 flex items-center justify-center active:scale-90 active:bg-white active:text-black transition-all group"
                         >
                             <span className="material-symbols-outlined text-[56px] text-white/30 group-active:text-black">measuring_tape</span>
                         </button>

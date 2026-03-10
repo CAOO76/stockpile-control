@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/DataService';
 import { M3Chip } from './M3Chip';
-import { StockpileStitchSummary } from './StockpileStitchSummary';
+import { StockpileSummary } from './StockpileSummary';
 import type { StockpileAsset, StockpileMeasurement } from '../types/StockpileAsset';
 
 interface StockpileDashboardProps {
@@ -14,7 +14,7 @@ interface StockpileDashboardProps {
 /**
  * StockpileDashboard (La Portada)
  * Pantalla central de gestión del ciclo de vida del acopio.
- * Ajustada a STITCH Minimalismo Extremo.
+ * Ajustada a Estándares de Minimalismo Extremo de MINREPORT.
  */
 export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId, onAddMeasurement, onSelectMeasurement, onBack }) => {
     const [asset, setAsset] = useState<StockpileAsset | null>(null);
@@ -70,7 +70,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
 
                     const { sharePDF } = await import('../utils/pdfHelper');
                     await sharePDF(
-                        'stitch-pdf-summary',
+                        'stockpile-report',
                         fileName,
                         `Reporte: ${asset.name}`
                     );
@@ -96,7 +96,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
     if (loading || !asset) {
         return (
             <div className="h-screen w-screen bg-black flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-none animate-spin"></div>
             </div>
         );
     }
@@ -120,12 +120,12 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                             setGeneratingPdf(true);
                             setShareImmediately(true);
                         }}
-                        className="w-10 h-10 flex items-center justify-center text-white/30 active:text-white transition-colors bg-white/5 rounded-xl hover:bg-white/10"
+                        className="w-10 h-10 flex items-center justify-center text-white/30 active:text-white transition-colors bg-white/5 rounded-none hover:bg-white/10"
                         title="Ver Reporte"
                     >
                         <span className="material-symbols-outlined text-xl">share</span>
                     </button>
-                    <button className="w-10 h-10 flex items-center justify-center bg-primary text-black rounded-xl active:scale-90 transition-transform shadow-[0_0_15px_rgba(255,176,0,0.2)]">
+                    <button className="w-10 h-10 flex items-center justify-center bg-primary text-black rounded-none active:scale-90 transition-transform shadow-[0_0_15px_rgba(255,176,0,0.2)]">
                         <span className="material-symbols-outlined text-xl font-bold">edit</span>
                     </button>
                 </div>
@@ -145,7 +145,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                     {/* Traceability Toggle (Original) */}
                     <button
                         onClick={() => setShowOriginal(!showOriginal)}
-                        className={`absolute top-4 right-4 z-20 px-3 py-2 rounded-full backdrop-blur-md border flex items-center gap-2 transition-all active:scale-95 ${showOriginal ? 'bg-primary border-primary text-black' : 'bg-black/40 border-white/10 text-white/60'}`}
+                        className={`absolute top-4 right-4 z-20 px-3 py-2 rounded-none backdrop-blur-md border flex items-center gap-2 transition-all active:scale-95 ${showOriginal ? 'bg-primary border-primary text-black' : 'bg-black/40 border-white/10 text-white/60'}`}
                     >
                         <span className="material-symbols-outlined text-lg">history</span>
                         <span className="text-[9px] font-black uppercase tracking-widest">{showOriginal ? 'Viendo Original' : 'Ver Original'}</span>
@@ -185,14 +185,14 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
 
                     {/* Deltas Grid */}
                     <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
-                        <div className="p-4 bg-white/5 rounded-3xl border border-white/10 flex flex-col gap-2">
+                        <div className="p-4 bg-white/5 rounded-none border border-white/10 flex flex-col gap-2">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Anterior</span>
                             <p className="text-2xl font-black text-primary tracking-tight">
                                 {prevM ? `${prevM.volumen_m3.toFixed(1)}` : '---'}
                                 {prevM && <span className="text-[10px] ml-1 opacity-40">m³</span>}
                             </p>
                         </div>
-                        <div className="p-4 bg-white/5 rounded-3xl border border-white/10 flex flex-col gap-2">
+                        <div className="p-4 bg-white/5 rounded-none border border-white/10 flex flex-col gap-2">
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">Variación</span>
                             <div className={`flex items-baseline gap-1 text-2xl font-black ${deltaVol >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                 <span className="material-symbols-outlined text-xl font-black translate-y-0.5">
@@ -214,7 +214,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
 
                             if (!lastM?.location_metadata) {
                                 return (
-                                    <div className="p-4 rounded-[20px] border border-white/10 bg-white/5 flex items-center justify-center">
+                                    <div className="p-4 rounded-none border border-white/10 bg-white/5 flex items-center justify-center">
                                         <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest text-center">
                                             SIN DATOS DE GPS EN EL HISTORIAL ({lastM?.id})
                                         </p>
@@ -224,7 +224,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
 
                             if (!apiKey) {
                                 return (
-                                    <div className="p-4 rounded-[20px] bg-red-900/20 border border-red-500/50 flex flex-col items-center justify-center">
+                                    <div className="p-4 rounded-none bg-red-900/20 border border-red-500/50 flex flex-col items-center justify-center">
                                         <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest text-center">
                                             MISSING GOOGLE MAPS API KEY
                                         </p>
@@ -232,7 +232,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                 );
                             }
 
-                            const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lastM.location_metadata.lat},${lastM.location_metadata.lng}&zoom=19&size=640x360&maptype=satellite&scale=2&markers=color:0xff6b00%7C${lastM.location_metadata.lat},${lastM.location_metadata.lng}&key=${apiKey}`;
+                            const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lastM.location_metadata.lat},${lastM.location_metadata.lng}&zoom=19&size=640x360&maptype=satellite&scale=2&markers=color:0xC68346%7C${lastM.location_metadata.lat},${lastM.location_metadata.lng}&key=${apiKey}`;
 
                             return (
                                 <>
@@ -246,7 +246,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                         </p>
                                     </div>
 
-                                    <div className="w-full aspect-video rounded-[40px] overflow-hidden border border-white/10 bg-black shadow-2xl relative group">
+                                    <div className="w-full aspect-video rounded-none overflow-hidden border border-white/10 bg-black shadow-2xl relative group">
                                         <img
                                             src={mapUrl}
                                             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
@@ -265,9 +265,9 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                                 }
                                             }}
                                         />
-                                        <div className="absolute inset-0 pointer-events-none border-[12px] border-black/20 rounded-[40px]" />
+                                        <div className="absolute inset-0 pointer-events-none border-[12px] border-black/20 rounded-none" />
                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                            <div className="w-4 h-4 bg-primary rounded-full shadow-[0_0_20px_rgba(255,255,255,0.5)] animate-pulse"></div>
+                                            <div className="w-4 h-4 bg-primary rounded-none shadow-[0_0_20px_rgba(255,255,255,0.5)] animate-pulse"></div>
                                         </div>
                                     </div>
                                 </>
@@ -287,9 +287,9 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                 <div
                                     key={m.id}
                                     onClick={() => onSelectMeasurement(m.id)}
-                                    className={`flex items-center gap-4 p-3 rounded-2xl border transition-all cursor-pointer ${m.ignored ? 'bg-red-500/5 border-red-500/10 opacity-50' : 'bg-white/3 border-white/5 active:bg-white/10'}`}
+                                    className={`flex items-center gap-4 p-3 rounded-none border transition-all cursor-pointer ${m.ignored ? 'bg-red-500/5 border-red-500/10 opacity-50' : 'bg-white/3 border-white/5 active:bg-white/10'}`}
                                 >
-                                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-black shrink-0 border border-white/10">
+                                    <div className="w-12 h-12 rounded-none overflow-hidden bg-black shrink-0 border border-white/10">
                                         <img src={m.photo_url} className="w-full h-full object-cover grayscale opacity-40" />
                                     </div>
                                     <div className="flex-1">
@@ -323,7 +323,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                         console.log('[Dashboard] CUBICAR clicked');
                         onAddMeasurement();
                     }}
-                    className="w-full h-18 bg-primary text-black rounded-3xl font-black uppercase tracking-[0.3em] text-xs flex items-center justify-center gap-4 active:scale-95 transition-all pointer-events-auto border-t border-white/10"
+                    className="w-full h-18 bg-primary text-black rounded-none font-black uppercase tracking-[0.3em] text-xs flex items-center justify-center gap-4 active:scale-95 transition-all pointer-events-auto border-t border-white/10"
                 >
                     <span className="material-symbols-outlined text-3xl font-black">straighten</span>
                     CUBICAR
@@ -333,7 +333,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
             {/* Loading Overlay for PDF */}
             {generatingPdf && !manualPdfUrl && (
                 <div className="fixed inset-0 z-[9999] bg-black/90 flex flex-col items-center justify-center backdrop-blur-md">
-                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-none animate-spin mb-4"></div>
                     <h2 className="text-xl font-black text-white uppercase tracking-widest">Generando Reporte PDF</h2>
                     <p className="text-xs text-white/50 uppercase tracking-wider mt-2">Por favor espere...</p>
                 </div>
@@ -342,7 +342,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
             {/* Success/Download Overlay (Manual Fallback) */}
             {manualPdfUrl && (
                 <div className="fixed inset-0 z-[10000] bg-black/95 flex flex-col items-center justify-center backdrop-blur-md p-8 animate-in fade-in duration-300">
-                    <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mb-6">
+                    <div className="w-20 h-20 rounded-none bg-green-500/20 flex items-center justify-center mb-6">
                         <span className="material-symbols-outlined text-5xl text-green-500">check</span>
                     </div>
                     <h2 className="text-2xl font-black text-white uppercase tracking-widest text-center mb-2">Reporte Listo</h2>
@@ -353,7 +353,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                     <a
                         href={manualPdfUrl}
                         download={`Ficha_${asset.name}.pdf`}
-                        className="w-full max-w-xs h-16 bg-primary text-black rounded-2xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 text-sm shadow-[0_0_30px_rgba(255,176,0,0.3)] active:scale-95 transition-transform"
+                        className="w-full max-w-xs h-16 bg-primary text-black rounded-none font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 text-sm shadow-[0_0_30px_rgba(255,176,0,0.3)] active:scale-95 transition-transform"
                         onClick={() => {
                             // Optional: Close after download if preferred, or let user close manually
                             setTimeout(() => setManualPdfUrl(null), 2000);
@@ -376,7 +376,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
             {asset && generatingPdf && (
                 <div
                     className={`fixed z-[9000] bg-white overflow-auto ${shareImmediately ? 'pointer-events-none' : 'inset-0'}`}
-                    style={shareImmediately ? { left: '-10000px', top: '0', width: '210mm', height: 'auto' } : {}}
+                    style={shareImmediately ? { left: '0', top: '0', opacity: '0.05', width: '210mm', height: 'auto', zIndex: 50, position: 'fixed', pointerEvents: 'none' } : {}}
                 >
                     {/* Floating Action Buttons */}
                     <div className="fixed top-4 right-4 z-[10001] flex flex-col gap-2">
@@ -388,7 +388,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                     const { downloadPDF } = await import('../utils/pdfHelper');
 
                                     await downloadPDF(
-                                        'stitch-pdf-summary',
+                                        'stockpile-report',
                                         `Ficha_${asset.name}_${new Date().toISOString().split('T')[0]}`
                                     );
                                 } catch (err: any) {
@@ -396,7 +396,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                     alert('Error al descargar: ' + err.message);
                                 }
                             }}
-                            className="w-14 h-14 rounded-full bg-primary text-black flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                            className="w-14 h-14 rounded-none bg-primary text-black flex items-center justify-center shadow-lg active:scale-95 transition-transform"
                             title="Descargar PDF"
                         >
                             <span className="material-symbols-outlined text-2xl font-black">download</span>
@@ -407,14 +407,14 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                         {/* Close Button */}
                         <button
                             onClick={() => setGeneratingPdf(false)}
-                            className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
+                            className="w-14 h-14 rounded-none bg-red-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-transform"
                             title="Cerrar"
                         >
                             <span className="material-symbols-outlined text-2xl">close</span>
                         </button>
                     </div>
 
-                    <StockpileStitchSummary
+                    <StockpileSummary
                         asset={asset}
                         history={validHistory}
                     />

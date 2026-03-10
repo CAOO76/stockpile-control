@@ -27,7 +27,7 @@ const GEOMETRY_NAMES: Record<string, string> = {
 export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGeometry, onSuccess, onBack }) => {
     const [geometria] = useState<GeometryType>(initialGeometry);
     const [dimensions, setDimensions] = useState({ a: '', b: '', h: '', ap: '', bp: '', p: '', pp: '' });
-    const [density, setDensity] = useState('1.66');
+    const [density, setDensity] = useState('');
     const [photo, setPhoto] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [gps, setGps] = useState<{ lat: number; lng: number; acc: number } | null>(null);
@@ -143,7 +143,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
             {/* Header Técnico (Fijo) */}
             <header className="flex-none pt-14 pb-4 px-6 flex items-center justify-between bg-black z-50">
                 <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
+                    <button onClick={onBack} className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
                         <span className="material-symbols-outlined text-3xl text-primary font-bold">arrow_back</span>
                     </button>
                     <div className="flex flex-col">
@@ -170,7 +170,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                         <span className="text-[10px] font-black tracking-[0.4em] text-white/20 uppercase">EVIDENCIA TÉCNICA</span>
                         <div
                             onClick={takePhoto}
-                            className={`relative w-full aspect-video rounded-3xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center
+                            className={`relative w-full aspect-video rounded-none border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center
                                 ${photo ? 'border-primary/40 bg-black' : 'border-white/10 bg-white/5 active:bg-white/10'}`}
                         >
                             {photo ? (
@@ -183,7 +183,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
-                                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/10"
+                                        className="absolute top-4 right-4 w-10 h-10 rounded-none bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/10"
                                     >
                                         <span className="material-symbols-outlined text-white/60">delete</span>
                                     </button>
@@ -201,16 +201,16 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                     <div className="grid grid-cols-1 gap-10">
                         {geometria === 'CONO_ELIPTICO' && (
                             <>
-                                <Field label="DIÁMETRO MAYOR BASE (m)" value={dimensions.a} onChange={(v) => setDimensions({ ...dimensions, a: v })} />
-                                <Field label="DIÁMETRO MENOR BASE (m)" value={dimensions.b} onChange={(v) => setDimensions({ ...dimensions, b: v })} />
+                                <Field label="EJE MAYOR BASE (m)" value={dimensions.a} onChange={(v) => setDimensions({ ...dimensions, a: v })} />
+                                <Field label="EJE MENOR BASE (m)" value={dimensions.b} onChange={(v) => setDimensions({ ...dimensions, b: v })} />
                             </>
                         )}
                         {geometria === 'CONO_ELIPTICO_TRUNCADO' && (
                             <>
-                                <Field label="DIÁMETRO A BASE (m)" value={dimensions.a} onChange={(v) => setDimensions({ ...dimensions, a: v })} />
-                                <Field label="DIÁMETRO B BASE (m)" value={dimensions.b} onChange={(v) => setDimensions({ ...dimensions, b: v })} />
-                                <Field label="DIÁMETRO A SUP (m)" value={dimensions.ap} onChange={(v) => setDimensions({ ...dimensions, ap: v })} />
-                                <Field label="DIÁMETRO B SUP (m)" value={dimensions.bp} onChange={(v) => setDimensions({ ...dimensions, bp: v })} />
+                                <Field label="EJE MAYOR BASE (m)" value={dimensions.a} onChange={(v) => setDimensions({ ...dimensions, a: v })} />
+                                <Field label="EJE MENOR BASE (m)" value={dimensions.b} onChange={(v) => setDimensions({ ...dimensions, b: v })} />
+                                <Field label="EJE MAYOR SUPERIOR (m)" value={dimensions.ap} onChange={(v) => setDimensions({ ...dimensions, ap: v })} />
+                                <Field label="EJE MENOR SUPERIOR (m)" value={dimensions.bp} onChange={(v) => setDimensions({ ...dimensions, bp: v })} />
                             </>
                         )}
                         {geometria === 'CONO_TRUNCADO_PERIMETRO' && (
@@ -224,7 +224,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                     </div>
 
                     {/* Dashboard de Resultados en Vivo */}
-                    <div className="bg-[#111] border border-white/5 rounded-3xl p-8 flex flex-col items-center gap-2">
+                    <div className="bg-[#111] border border-white/5 rounded-none p-8 flex flex-col items-center gap-2">
                         <span className="text-[11px] font-black text-white/30 tracking-[0.4em] uppercase">VOLUMEN ESTIMADO</span>
                         <div className="flex items-baseline gap-3">
                             <span className="text-6xl font-black text-primary tracking-tighter">
@@ -239,10 +239,10 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                         <button
                             onClick={handleSave}
                             disabled={isSaving || liveEstimation <= 0}
-                            className={`w-full max-w-xs h-20 rounded-2xl flex items-center justify-center gap-4 transition-all
+                            className={`w-full max-w-xs h-20 rounded-none flex items-center justify-center gap-4 transition-all
                                 ${isSaving || liveEstimation <= 0
                                     ? 'bg-white/5 text-white/20'
-                                    : 'bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95'
+                                    : 'bg-primary text-black font-black shadow-[0_0_30px_rgba(198,131,70,0.1)] active:scale-95'
                                 }`}
                         >
                             {isSaving ? (
@@ -277,8 +277,8 @@ const Field: React.FC<{ label: string, value: string, onChange: (v: string) => v
                     const val = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
                     onChange(val);
                 }}
-                className="w-full !bg-[#1a1a1a] border-2 border-white/10 rounded-2xl h-16 px-6 text-3xl font-black !text-white outline-none focus:border-primary transition-all text-center tracking-tight"
-                placeholder="0.00"
+                className="w-full !bg-[#1a1a1a] border-2 border-white/10 rounded-none h-16 px-6 text-3xl font-black !text-white outline-none focus:border-primary transition-all text-center tracking-tight"
+                placeholder=" "
                 autoComplete="off"
             />
         </div>

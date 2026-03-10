@@ -122,7 +122,7 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ onAnalysisComplete }) =
   };
 
   return (
-    <div className="font-atkinson w-full h-full bg-black relative overflow-hidden rounded-3xl shadow-2xl ring-1 ring-white/10">
+    <div className="font-atkinson w-full h-full bg-black relative overflow-hidden rounded-none shadow-2xl ring-1 ring-white/10">
       <canvas ref={canvasRef} className="hidden" />
 
       {isCameraActive ? (
@@ -157,7 +157,7 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ onAnalysisComplete }) =
                   onClick={analyzeGranulometry}
                   disabled={analysisState === 'analyzing'}
                   className={clsx(
-                    "w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 overflow-hidden",
+                    "w-24 h-24 rounded-none flex items-center justify-center shadow-2xl transition-all duration-300 overflow-hidden",
                     "bg-white/90 text-black hover:bg-white hover:scale-105 active:scale-95",
                     "border-4 border-transparent hover:border-primary/50",
                     { "opacity-50 cursor-not-allowed": analysisState === 'analyzing' }
@@ -169,17 +169,17 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ onAnalysisComplete }) =
                   </span>
                 </button>
               ) : (
-                <div className="flex items-center gap-4 bg-black/60 p-2 rounded-full backdrop-blur-md border border-white/10 animate-in fade-in slide-in-from-bottom-4 landscape:flex-col landscape:p-4">
+                <div className="flex items-center gap-4 bg-black/60 p-2 rounded-none backdrop-blur-md border border-white/10 animate-in fade-in slide-in-from-bottom-4 landscape:flex-col landscape:p-4">
                   <button
                     onClick={() => setAnalysisState('idle')}
-                    className="w-16 h-16 rounded-full font-medium text-white/90 hover:bg-white/10 transition-colors flex items-center justify-center overflow-hidden"
+                    className="w-16 h-16 rounded-none font-medium text-white/90 hover:bg-white/10 transition-colors flex items-center justify-center overflow-hidden"
                     title="Reintentar"
                   >
                     <span className="material-symbols-rounded text-[32px]">refresh</span>
                   </button>
                   <button
                     onClick={handleAcceptAnalysis}
-                    className="w-20 h-20 rounded-full font-bold bg-primary text-black shadow-lg hover:shadow-primary/40 transition-all flex items-center justify-center overflow-hidden"
+                    className="w-20 h-20 rounded-none font-bold bg-primary text-black shadow-lg hover:shadow-primary/40 transition-all flex items-center justify-center overflow-hidden"
                     title="Usar Resultado"
                   >
                     <span className="material-symbols-rounded text-[40px]">check</span>
@@ -197,14 +197,14 @@ const VisionAnalyzer: React.FC<VisionAnalyzerProps> = ({ onAnalysisComplete }) =
               <p className="text-antigravity-dark-text text-lg font-medium">{error}</p>
               <button
                 onClick={enableCamera}
-                className="mt-4 px-6 py-3 bg-antigravity-accent text-white rounded-full font-bold shadow-lg hover:bg-antigravity-accent/90 transition-colors"
+                className="mt-4 px-6 py-3 bg-antigravity-accent text-white rounded-none font-bold shadow-lg hover:bg-antigravity-accent/90 transition-colors"
               >
                 Reintentar
               </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-4 border-antigravity-accent border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-antigravity-accent border-t-transparent rounded-none animate-spin"></div>
               <p className="text-antigravity-dark-muted font-medium animate-pulse">Iniciando cámara...</p>
             </div>
           )}

@@ -1,0 +1,27 @@
+{
+  "theme": "Elite Industrial Minimalism",
+  "rules": {
+    "typography": {
+      "primary": "Atkinson Hyperlegible",
+      "fallback": "sans-serif"
+    },
+    "borders": {
+      "radius": "0px",
+      "style": "solid",
+      "width": "1px"
+    },
+    "colors": {
+      "accent": "#C68346",
+      "background": "#000000",
+      "surface": "#1A1A1A",
+      "text": "#FFFFFF"
+    },
+    "constraints": {
+      "maxDepth": 3,
+      "enforceNativeScroll": true,
+      "prohibitAppEngine": true,
+      "region": "southamerica-west1"
+    }
+  },
+  "audit_version": "2.1.0"
+}

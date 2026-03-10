@@ -14,6 +14,7 @@ export function usePlatform() {
 
         if (p === 'android') currentPlatform = 'android';
         else if (p === 'ios') currentPlatform = 'ios';
+        else if (window.innerWidth < 768) currentPlatform = 'android'; // Simulate mobile on small screens
 
         setPlatform(currentPlatform);
         setIsNative(currentPlatform === 'android' || currentPlatform === 'ios');

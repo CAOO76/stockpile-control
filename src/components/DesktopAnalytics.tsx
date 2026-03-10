@@ -1,290 +1,418 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer
-} from 'recharts';
-import { M3TextField } from './M3TextField';
-import { M3Badge } from './M3Badge';
-import { SDKButton } from './SDKButton';
-import { calculationEngine } from '../services/calculation-engine';
 import { dataService } from '../services/DataService';
-import type { StockpileAsset } from '../types/StockpileAsset';
+import type { StockpileAsset, StockpileMeasurement } from '../types/StockpileAsset';
+import { StockpileSummary } from './StockpileSummary';
+import { downloadPDF } from '../utils/pdfHelper';
+import { MeasurementDetail } from './MeasurementDetail';
+import { 
+    ResponsiveContainer, 
+    AreaChart, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    Area,
+    ReferenceDot
+} from 'recharts';
 
 /**
- * DesktopAnalytics v2.0.0 - Gestión de Inventario y Conciliación de Romana
+ * DesktopAnalytics v3.0.0 - STOCKPILE CONTROL CENTER
+ * Reemplaza la funcionalidad decorativa por un dashboard técnico de ingeniería de minas.
  */
 export const DesktopAnalytics: React.FC = () => {
     const [assets, setAssets] = useState<StockpileAsset[]>([]);
     const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
-    const [realWeightInput, setRealWeightInput] = useState('');
-    const [materialProfiles, setMaterialProfiles] = useState<Record<string, number>>({});
+    const [selectedMeasurement, setSelectedMeasurement] = useState<StockpileMeasurement | null>(null);
+    const [measurements, setMeasurements] = useState<Record<string, StockpileMeasurement[]>>({});
+    const [generatingPdf, setGeneratingPdf] = useState(false);
 
-    // Carga inicial reactiva via context.storage.read (Simulado a través de DataService)
+    // Suscripción reactiva a todos los activos en tiempo real
     useEffect(() => {
-        let unsubscribe: (() => void) | undefined;
         let mounted = true;
+        const unsubscribeAssets = dataService.subscribeToAllAssets((data: StockpileAsset[]) => {
+            if (mounted) setAssets(data);
+        });
 
-        const init = async () => {
-            try {
-                // 1. Cargar perfiles de material (configuración estática)
-                const profiles = await dataService.getMaterialProfiles();
-                if (mounted) setMaterialProfiles(profiles);
-
-                // 2. Suscribirse a cambios en activos (tiempo real)
-                unsubscribe = dataService.subscribeToAllAssets((data) => {
-                    if (mounted) setAssets(data);
+        // Suscripción a mediciones para historial y KPIs globales
+        const unsubscribeMeasurements = dataService.subscribeToMeasurementsAll((data: StockpileMeasurement[]) => {
+            if (mounted) {
+                // Agrupar mediciones por assetId
+                const grouped = data.reduce((acc, m) => {
+                    if (!acc[m.assetId]) acc[m.assetId] = [];
+                    acc[m.assetId].push(m);
+                    return acc;
+                }, {} as Record<string, StockpileMeasurement[]>);
+                
+                // Ordenar por timestamp descendente
+                Object.keys(grouped).forEach(id => {
+                    grouped[id].sort((a, b) => b.timestamp - a.timestamp);
                 });
-            } catch (error) {
-                console.error('[Analytics] Error initializing:', error);
+                
+                setMeasurements(grouped);
             }
-        };
-
-        init();
+        });
 
         return () => {
             mounted = false;
-            if (unsubscribe) unsubscribe();
+            unsubscribeAssets();
+            unsubscribeMeasurements();
         };
     }, []);
 
-    const selectedAsset = useMemo(() =>
+    // KPIs Globales (Agregados Reales)
+    const stats = useMemo(() => {
+        try {
+            const totalVolume = assets.reduce((acc, a) => acc + (a?.last_volume_m3 || 0), 0);
+            const totalWeight = assets.reduce((acc, a) => acc + (a?.last_weight_t || 0), 0);
+            const avgDensity = totalVolume > 0 ? totalWeight / totalVolume : 0;
+            const mineralCount = assets.filter(a => a?.clase === 'mineral').length;
+            const wasteCount = assets.filter(a => a?.clase === 'esteril').length;
+            return { totalVolume, totalWeight, avgDensity, mineralCount, wasteCount };
+        } catch (e) {
+            console.error('[DesktopAnalytics] Error parseando KPIs:', e);
+            return { totalVolume: 0, totalWeight: 0, avgDensity: 0, mineralCount: 0, wasteCount: 0 };
+        }
+    }, [assets]);
+
+    // Selección automática del último acopio registrado al cargar
+    useEffect(() => {
+        if (assets.length > 0 && !selectedAssetId) {
+            // Asumimos que el primero es el más reciente o el principal
+            setSelectedAssetId(assets[0].id!);
+        }
+    }, [assets, selectedAssetId]);
+
+    const selectedAsset = useMemo(() => 
         assets.find(a => a.id === selectedAssetId) || null
-        , [assets, selectedAssetId]);
+    , [assets, selectedAssetId]);
 
-    // Cálculo de Conciliación en tiempo real
-    const reconciliation = useMemo(() => {
-        if (!selectedAsset || !realWeightInput) return null;
-        const realWeight = parseFloat(realWeightInput);
-        const volume = selectedAsset.volumen || 0;
-        const estWeight = selectedAsset.peso_final_toneladas || 0;
+    const selectedHistory = useMemo(() => 
+        selectedAssetId ? (measurements[selectedAssetId] || []) : []
+    , [measurements, selectedAssetId]);
 
-        const realFactor = calculationEngine.computeRealTonnage(volume, realWeight);
-        const comparison = calculationEngine.compareTonnage(estWeight, realWeight);
+    const chartData = useMemo(() => {
+        return [...selectedHistory].reverse().map(m => ({
+            timestamp: m.timestamp,
+            date: new Date(m.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }),
+            volumen: m.volumen_m3,
+            peso: m.peso_t,
+            id: m.id
+        }));
+    }, [selectedHistory]);
 
-        return { realFactor, ...comparison };
-    }, [selectedAsset, realWeightInput]);
+    const selectedPoint = useMemo(() => {
+        if (!selectedMeasurement) return null;
+        return chartData.find(p => p.id === selectedMeasurement.id) || null;
+    }, [chartData, selectedMeasurement]);
 
-    // Datos para el Dashboard (Tonelaje Estimado vs Real por Granulometría)
-    const dashboardData = useMemo(() => {
-        const granulometries = ['COLPAS', 'GRANSA', 'MIXTO', 'FINOS'] as const;
-        return granulometries.map(g => {
-            const gAssets = assets.filter(a => a.tipo_granulometria === g && a.peso_romana);
-            const est = gAssets.reduce((acc, curr) => acc + (curr.peso_final_toneladas || 0), 0);
-            const real = gAssets.reduce((acc, curr) => acc + (curr.peso_romana || 0), 0);
-            return { name: g, estimación: est, real: real };
-        });
-    }, [assets]);
-
-    // Lógica de Calibración de IA (Sugerencia por promedios)
-    const calibrationSuggestions = useMemo(() => {
-        const suggestions: Record<string, number | null> = {};
-        ['COLPAS', 'GRANSA', 'MIXTO', 'FINOS'].forEach(g => {
-            const hist = assets
-                .filter(a => a.tipo_granulometria === g && a.factor_real)
-                .map(a => ({ realFactor: a.factor_real! }));
-            suggestions[g] = calculationEngine.getSuggestedCalibration(hist);
-        });
-        return suggestions;
-    }, [assets]);
-
-    const handleSaveScaleWeight = async () => {
-        if (!selectedAsset || !reconciliation) return;
-
-        const updated: StockpileAsset = {
-            ...selectedAsset,
-            peso_romana: parseFloat(realWeightInput),
-            factor_real: reconciliation.realFactor,
-            metadata: {
-                ...selectedAsset.metadata,
-                conciliado: true,
-                fecha_conciliacion: Date.now()
-            }
-        };
-
-        await dataService.saveStockpileData(updated, selectedAsset.id);
-        setAssets(prev => prev.map(a => a.id === updated.id ? updated : a));
-        setRealWeightInput('');
-        alert('Peso de romana registrado y factor real calculado.');
-    };
-
-    const handleCalibrateFactor = async (granulometry: string, newFactor: number) => {
-        const newProfiles = { ...materialProfiles, [granulometry]: newFactor };
-        await dataService.saveMaterialProfiles(newProfiles);
-        setMaterialProfiles(newProfiles);
-        alert(`Factor global para ${granulometry} actualizado a ${newFactor}. Se sincronizará con terreno.`);
-    };
-
-    const generatePDFCertification = () => {
+    const handleDownloadPDF = async () => {
         if (!selectedAsset) return;
-        console.log('Generando Certificación PDF Digital...');
-        alert(`Certificado Generado para ${selectedAsset.name}\nVolumen: ${selectedAsset.volumen?.toFixed(2)} m³\nFirma Digital: stockpile-control-v2.0.0-signed`);
+        setGeneratingPdf(true);
+        try {
+            await downloadPDF('stockpile-report', `Reporte_${selectedAsset.name}`);
+        } catch (error) {
+            console.error('PDF Error:', error);
+        } finally {
+            setGeneratingPdf(false);
+        }
     };
 
     return (
-        <div className="desktop-analytics h-screen bg-antigravity-light-bg dark:bg-antigravity-dark-bg p-8 font-atkinson flex flex-col antialiased overflow-hidden">
-            {/* Header M3 */}
-            <header className="mb-8 flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                        <span className="material-symbols-outlined text-antigravity-accent">landscape</span>
-                        Gestión de Inventario y Conciliación
-                    </h1>
-                    <p className="opacity-60 text-sm mt-1">Calibración de Factores de Densidad vs. Romana Real</p>
+        <div className="h-screen bg-[#0a0a0a] text-white font-atkinson flex flex-col antialiased overflow-hidden select-none">
+            
+            {/* PLUGIN HEADER */}
+            <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-black/40 backdrop-blur-md z-20">
+                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4">
+                    <div>
+                        <h1 className="text-sm font-black uppercase tracking-[0.3em] leading-none">STOCKPILE CONTROL CENTER</h1>
+                    </div>
                 </div>
-                <div className="flex gap-4">
-                    <SDKButton onClick={generatePDFCertification} disabled={!selectedAsset} variant="secondary">
-                        <span className="material-symbols-rounded mr-2">picture_as_pdf</span> Certificar Inventario
-                    </SDKButton>
+                </div>
+                
+                <div className="flex gap-8">
                 </div>
             </header>
 
-            {/* Grid de 3 Columnas */}
-            <div className="grid grid-cols-12 gap-8 flex-1 overflow-hidden">
-
-                {/* Columna 1: Registro de Romana */}
-                <section className="col-span-4 bg-antigravity-light-surface dark:bg-antigravity-dark-surface rounded-[40px] border border-antigravity-light-border dark:border-antigravity-dark-border shadow-sm flex flex-col overflow-hidden">
-                    <div className="p-6 border-b border-antigravity-light-border dark:border-antigravity-dark-border">
-                        <h2 className="text-lg font-bold flex items-center gap-2">
-                            <span className="material-symbols-rounded text-green-500">scale</span>
-                            Listado para Conciliación
-                        </h2>
+            {/* MAIN LAYOUT */}
+            <main className="flex-1 flex flex-col overflow-hidden">
+                
+                {/* TOP HUD: GLOBAL KPIs - COMPACT VERSION */}
+                <section className="h-14 border-b border-white/5 bg-white/[0.02] flex items-center px-4 overflow-hidden">
+                    <div className="flex items-center h-full px-6 border-r border-white/5 group">
+                        <span className="text-[10px] font-black opacity-20 uppercase tracking-widest mr-4">ACTIVOS</span>
+                        <div className="text-xl font-black font-mono">{assets.length}</div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-none">
-                        {assets.map(asset => (
-                            <button
-                                key={asset.id}
-                                onClick={() => { setSelectedAssetId(asset.id!); setRealWeightInput(''); }}
-                                className={`w-full text-left p-5 rounded-3xl transition-all border-2 ${selectedAssetId === asset.id ? 'border-antigravity-accent bg-antigravity-accent/5' : 'border-transparent hover:bg-antigravity-light-bg dark:hover:bg-antigravity-dark-bg'}`}
-                            >
-                                <div className="flex justify-between items-start">
-                                    <span className="font-bold">{asset.name}</span>
-                                    {asset.peso_romana ? (
-                                        <span className="bg-green-500/10 text-green-600 text-[10px] px-2 py-1 rounded-full font-bold">CONCILIADO</span>
-                                    ) : (
-                                        <span className="bg-orange-500/10 text-orange-600 text-[10px] px-2 py-1 rounded-full font-bold">PENDIENTE</span>
-                                    )}
-                                </div>
-                                <div className="text-xs opacity-60 mt-2 flex justify-between">
-                                    <span>{asset.tipo_granulometria}</span>
-                                    <span>{asset.volumen?.toFixed(1)} m³</span>
-                                </div>
-                            </button>
-                        ))}
+                    <div className="flex items-center h-full px-6 border-r border-white/5 group">
+                        <span className="text-[10px] font-black opacity-20 uppercase tracking-widest mr-4">VOLUMEN</span>
+                        <div className="text-xl font-black font-mono text-[#C68346]">
+                            {stats.totalVolume.toLocaleString('es-CL', { maximumFractionDigits: 1 })} <span className="text-[10px] opacity-20">m³</span>
+                        </div>
                     </div>
+                    <div className="flex items-center h-full px-6 border-r border-white/5 group">
+                        <span className="text-[10px] font-black opacity-20 uppercase tracking-widest mr-4">PESO</span>
+                        <div className="text-xl font-black font-mono text-[#C68346]">
+                            {stats.totalWeight.toLocaleString('es-CL', { maximumFractionDigits: 0 })} <span className="text-[10px] opacity-20">t</span>
+                        </div>
+                    </div>
+                    <div className="flex-1 flex items-center justify-end px-6 gap-4">
+                         <div className="w-32 h-1 bg-white/5 overflow-hidden">
+                            <div className="h-full bg-[#C68346]" style={{ width: `${(stats.mineralCount / (assets.length || 1)) * 100}%` }}></div>
+                        </div>
+                        <div className="w-32 h-1 bg-white/5 overflow-hidden">
+                            <div className="h-full bg-white/20" style={{ width: `${(stats.wasteCount / (assets.length || 1)) * 100}%` }}></div>
+                        </div>
+                    </div>
+                </section>
+                <div className="flex-1 flex overflow-hidden">
+                    
+                    {/* PILLAR 1: ASSET MASTER LIST (MASTER) - w-72 */}
+                    <section className="w-72 border-r border-white/10 flex flex-col bg-black z-10">
+                        <div className="flex-1 overflow-y-auto scrollbar-none">
+                            {assets.map(asset => {
+                                const isSelected = selectedAssetId === asset.id;
+                                const daysSince = asset.last_measured_at ? Math.floor((Date.now() - asset.last_measured_at) / (1000 * 60 * 60 * 24)) : 99;
+                                const isStale = daysSince > 7;
 
-                    {selectedAsset && (
-                        <div className="p-6 bg-antigravity-light-bg dark:bg-antigravity-dark-bg border-t border-antigravity-light-border dark:border-antigravity-dark-border animate-in slide-in-from-bottom-4">
-                            <M3TextField
-                                label="Peso Real en Romana (ton)"
-                                value={realWeightInput}
-                                onChange={setRealWeightInput}
-                                type="number"
-                                placeholder="Ej: 25.4"
-                                autoComplete="off"
-                            />
-                            {reconciliation && (
-                                <div className="mt-4 grid grid-cols-2 gap-3">
-                                    <div className="p-3 bg-white dark:bg-black/20 rounded-2xl border border-antigravity-light-border dark:border-antigravity-dark-border">
-                                        <div className="text-[10px] font-bold opacity-60">FACTOR REAL</div>
-                                        <div className="text-sm font-bold text-antigravity-accent">{reconciliation.realFactor.toFixed(3)}</div>
-                                    </div>
-                                    <div className="p-3 bg-white dark:bg-black/20 rounded-2xl border border-antigravity-light-border dark:border-antigravity-dark-border">
-                                        <div className="text-[10px] font-bold opacity-60">DESVIACIÓN</div>
-                                        <div className={`text-sm font-bold ${reconciliation.isWithinTolerance ? 'text-green-500' : 'text-red-500'}`}>
-                                            {reconciliation.differencePercent.toFixed(1)}%
+                                return (
+                                    <div 
+                                        key={asset.id} 
+                                        onClick={() => {
+                                            setSelectedAssetId(asset.id!);
+                                            setSelectedMeasurement(null);
+                                        }}
+                                        className={`p-4 border-b border-white/[0.05] cursor-pointer transition-all hover:bg-white/[0.03] flex flex-col gap-1 relative ${isSelected ? 'bg-[#C68346]/10' : ''}`}
+                                    >
+                                        {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#C68346]"></div>}
+                                        <div className="flex justify-between items-start">
+                                            <div className="font-bold uppercase tracking-tight text-xs">{asset.name}</div>
+                                            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 ${asset.clase === 'mineral' ? 'bg-[#C68346] text-black' : 'bg-white/10 opacity-40'}`}>
+                                                {asset.clase.substring(0,3)}
+                                            </span>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
-                            <div className="mt-4">
-                                <SDKButton onClick={handleSaveScaleWeight} fullWidth disabled={!realWeightInput}>Registrar Pesaje</SDKButton>
-                            </div>
-                        </div>
-                    )}
-                </section>
-
-                {/* Columna 2: Dashboard Visual */}
-                <section className="col-span-5 flex flex-col gap-8">
-                    <div className="flex-1 bg-antigravity-light-surface dark:bg-antigravity-dark-surface rounded-[40px] border border-antigravity-light-border dark:border-antigravity-dark-border shadow-sm p-8 flex flex-col overflow-hidden">
-                        <h2 className="text-xl font-bold flex items-center gap-2 mb-8">
-                            <span className="material-symbols-rounded text-blue-500">bar_chart</span>
-                            Exactitud del Inventario
-                        </h2>
-                        <div className="flex-1 min-h-[400px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={dashboardData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 'bold' }} />
-                                    <YAxis axisLine={false} tickLine={false} />
-                                    <Tooltip
-                                        cursor={{ fill: 'transparent' }}
-                                        contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
-                                    />
-                                    <Legend iconType="circle" />
-                                    <Bar dataKey="estimación" fill="#d1d5db" radius={[10, 10, 0, 0]} barSize={24} />
-                                    <Bar dataKey="real" fill="#ff4757" radius={[10, 10, 0, 0]} barSize={24} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-6">
-                        <M3Badge label="Total Acopios" value={assets.length.toString()} unit="registros" />
-                        <M3Badge label="Conciliación" value={((assets.filter(a => a.peso_romana).length / assets.length) * 100 || 0).toFixed(0)} unit="%" variant="primary" />
-                    </div>
-                </section>
-
-                {/* Columna 3: Calibración de IA */}
-                <section className="col-span-3 bg-antigravity-light-surface dark:bg-antigravity-dark-surface rounded-[40px] border border-antigravity-light-border dark:border-antigravity-dark-border shadow-sm p-6 flex flex-col">
-                    <h2 className="text-lg font-bold flex items-center gap-2 mb-6">
-                        <span className="material-symbols-rounded text-antigravity-accent">auto_fix_high</span>
-                        Calibración IA
-                    </h2>
-
-                    <div className="space-y-4">
-                        {Object.entries(materialProfiles).map(([granulometry, currentFactor]) => {
-                            const suggestion = calibrationSuggestions[granulometry];
-                            return (
-                                <div key={granulometry} className="p-5 bg-antigravity-light-bg dark:bg-antigravity-dark-bg rounded-3xl border border-antigravity-light-border dark:border-antigravity-dark-border">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-xs font-bold uppercase tracking-widest opacity-60">{granulometry}</span>
-                                        <span className="text-lg font-bold">{currentFactor} <span className="text-[10px] opacity-40">t/m³</span></span>
-                                    </div>
-
-                                    {suggestion && suggestion !== currentFactor ? (
-                                        <div className="bg-antigravity-accent/5 rounded-2xl p-4 border border-antigravity-accent/20">
-                                            <div className="text-[10px] text-antigravity-accent font-bold mb-1 uppercase">Sugerencia de Calibración</div>
-                                            <div className="flex justify-between items-center">
-                                                <div className="text-xl font-bold">{suggestion}</div>
-                                                <SDKButton onClick={() => handleCalibrateFactor(granulometry, suggestion)} variant="secondary">
-                                                    ACEPTAR
-                                                </SDKButton>
+                                        <div className="flex justify-between items-end mt-2">
+                                            <div className="text-[10px] font-mono text-[#C68346] font-bold">
+                                                {asset.last_volume_m3?.toFixed(1) || '0.0'} <span className="opacity-40 text-[8px]">m³</span>
+                                            </div>
+                                            <div className={`text-[8px] font-black uppercase ${isStale ? 'text-red-500' : 'text-green-500/60'}`}>
+                                                {daysSince === 0 ? 'ACTIVO' : `${daysSince}D`}
                                             </div>
                                         </div>
-                                    ) : (
-                                        <div className="text-center py-2 opacity-30">
-                                            <span className="material-symbols-rounded text-lg">check_circle</span>
-                                            <div className="text-[10px] mt-1">Sincronizado</div>
-                                        </div>
-                                    )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </section>
+
+                    {/* PILLAR 2: ANALYTICAL WORKSPACE (WORKSPACE) - flex-1 */}
+                    <section className="flex-1 bg-[#0a0a0a] flex flex-col overflow-hidden border-r border-white/5">
+                        {selectedAsset ? (
+                            <div className="flex-1 flex flex-col animate-in fade-in duration-500 overflow-hidden">
+                                
+                                <div className="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
+                                    <div>
+                                        <div className="text-[10px] font-black text-[#C68346] opacity-40 uppercase tracking-[0.4em] mb-1">UNIT_WORKSPACE</div>
+                                        <h2 className="text-4xl font-black uppercase tracking-tight leading-none text-white">{selectedAsset.name}</h2>
+                                    </div>
+                                    <button 
+                                        onClick={handleDownloadPDF}
+                                        disabled={generatingPdf}
+                                        className={`flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 ${generatingPdf ? 'animate-pulse text-[#C68346]' : 'text-white/20 hover:text-[#C68346]'}`}
+                                    >
+                                        <span className="material-symbols-outlined text-4xl">picture_as_pdf</span>
+                                    </button>
                                 </div>
-                            );
-                        })}
-                    </div>
 
-                    <div className="mt-auto p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-3">
-                        <span className="material-symbols-rounded text-blue-500 text-base">info</span>
-                        <p className="text-[10px] text-blue-500">Los factores aceptados aquí se propagarán instantáneamente a los cálculos de terreno de todos los operadores.</p>
-                    </div>
-                </section>
+                                <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-none text-white">
+                                    
+                                    {/* ANALYTICAL GRAPH SECTION */}
+                                    <div className="h-72 w-full bg-black/40 border border-white/5 p-6 relative group">
+                                        <div className="absolute top-4 left-6 z-10">
+                                            <span className="text-[9px] font-black opacity-20 uppercase tracking-widest">VOLUMETRIC_EVOLUTION_M3</span>
+                                        </div>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={chartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="volGradient" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#C68346" stopOpacity={0.3}/>
+                                                        <stop offset="95%" stopColor="#C68346" stopOpacity={0}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                                <XAxis 
+                                                    dataKey="timestamp" 
+                                                    axisLine={false} 
+                                                    tickLine={false} 
+                                                    tick={{ fontSize: 9, fill: '#ffffff20', fontWeight: 'bold' }}
+                                                    tickFormatter={(t) => new Date(t).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}
+                                                />
+                                                <YAxis 
+                                                    axisLine={false} 
+                                                    tickLine={false} 
+                                                    tick={{ fontSize: 9, fill: '#ffffff20', fontWeight: 'bold' }} 
+                                                />
+                                                <Tooltip 
+                                                    contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', fontSize: '10px', borderRadius: '0' }}
+                                                    itemStyle={{ color: '#C68346', fontWeight: 'black' }}
+                                                    labelStyle={{ color: '#ffffff40', marginBottom: '4px' }}
+                                                    labelFormatter={(t) => new Date(t).toLocaleString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                />
+                                                <Area 
+                                                    type="monotone" 
+                                                    dataKey="volumen" 
+                                                    stroke="#C68346" 
+                                                    strokeWidth={2}
+                                                    fillOpacity={1} 
+                                                    fill="url(#volGradient)" 
+                                                    animationDuration={1000}
+                                                />
+                                                {selectedPoint && (
+                                                    <ReferenceDot 
+                                                        x={selectedPoint.timestamp} 
+                                                        y={selectedPoint.volumen} 
+                                                        r={8} 
+                                                        fill="#C68346" 
+                                                        stroke="#fff" 
+                                                        strokeWidth={3} 
+                                                        className="drop-shadow-[0_0_8px_rgba(198,131,70,1)]"
+                                                    />
+                                                )}
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
 
-            </div>
+                                    {/* UPDATED TOTALS / KPIs */}
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="bg-white/[0.02] border border-white/5 p-6 group hover:border-[#C68346]/20 transition-all">
+                                            <label className="text-[9px] font-black opacity-20 uppercase tracking-widest block mb-1">TOTAL_VOLUMEN</label>
+                                            <div className="text-3xl font-black font-mono text-white leading-none">
+                                                {selectedAsset.last_volume_m3?.toFixed(1) || '0.0'} <span className="text-[10px] opacity-20">m³</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/[0.02] border border-white/5 p-6 group hover:border-[#C68346]/20 transition-all">
+                                            <label className="text-[9px] font-black opacity-20 uppercase tracking-widest block mb-1">TOTAL_PESO</label>
+                                            <div className="text-3xl font-black font-mono text-white leading-none">
+                                                {selectedAsset.last_weight_t?.toFixed(0) || '0'} <span className="text-[10px] opacity-20">t</span>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white/[0.02] border border-white/5 p-6 group hover:border-[#C68346]/20 transition-all">
+                                            <label className="text-[9px] font-black opacity-20 uppercase tracking-widest block mb-1">DENSIDAD_CALC</label>
+                                            <div className="text-3xl font-black font-mono text-[#C68346] leading-none">
+                                                {(selectedAsset.last_weight_t && selectedAsset.last_volume_m3 ? selectedAsset.last_weight_t / selectedAsset.last_volume_m3 : 0.0).toFixed(2)} <span className="text-[10px] opacity-20 text-white">t/m³</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* TECHNICAL EVIDENCE PAIR (BOTTOM) */}
+                                    <div className="grid grid-cols-2 gap-6 h-64">
+                                        {/* LAST CAPTURE PHOTO */}
+                                        <div className="border border-white/10 bg-black relative group overflow-hidden flex flex-col">
+                                            <div className="absolute top-3 left-4 z-10 flex items-center gap-2">
+                                                <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse"></span>
+                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em]">ULTIMA_CAPTURA_FOTO</span>
+                                            </div>
+                                            {selectedAsset.last_photo_url ? (
+                                                <img src={selectedAsset.last_photo_url} className="w-full h-full object-cover grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700" />
+                                            ) : (
+                                                <div className="w-full h-full flex flex-col items-center justify-center opacity-5">
+                                                    <span className="material-symbols-outlined text-4xl">no_photography</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* GEORREFF MAP */}
+                                        <div className="border border-white/10 bg-zinc-950 flex flex-col items-center justify-center relative overflow-hidden group">
+                                             <div className="absolute top-3 left-4 z-10 flex items-center gap-2">
+                                                <span className="w-1 h-1 rounded-full bg-[#C68346]"></span>
+                                                <span className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em]">MAPA_GEORREFERENCIADO</span>
+                                            </div>
+                                            {(() => {
+                                                const apiKey = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY;
+                                                const lat = selectedAsset.geo_point?.latitude;
+                                                const lng = selectedAsset.geo_point?.longitude;
+
+                                                if (apiKey && lat !== undefined && lng !== undefined) {
+                                                    const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=18&size=600x600&maptype=satellite&scale=2&markers=color:0xC68346%7C${lat},${lng}&key=${apiKey}`;
+                                                    return (
+                                                        <img 
+                                                            src={mapUrl} 
+                                                            className="w-full h-full object-cover opacity-40 group-hover:opacity-100 transition-opacity duration-700" 
+                                                            alt="" 
+                                                        />
+                                                    );
+                                                }
+                                                return <div className="opacity-5 font-mono text-[9px]">SAT_LINK_FAILED</div>;
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center opacity-5">
+                                <span className="text-[10px] font-black tracking-[1em] uppercase">WAITING_FOR_ASSET_SELECTION</span>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* PILLAR 3: MEASUREMENT HISTORY (TRAZABILIDAD) - w-64 */}
+                    <section className="w-64 border-r border-white/10 flex flex-col bg-black overflow-hidden relative">
+                        {selectedAsset && (
+                            <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
+                                <div className="h-10 border-b border-white/5 flex items-center px-4 bg-white/[0.02]">
+                                        <span className="text-[10px] font-black opacity-20 uppercase tracking-[0.2em]">HISTORIAL_CRONO</span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-3 space-y-1.5 scrollbar-none">
+                                    {selectedHistory.map((m, i) => {
+                                        const prev = selectedHistory[i + 1];
+                                        const diff = prev ? m.volumen_m3 - prev.volumen_m3 : 0;
+                                        const isSelected = selectedMeasurement?.id === m.id;
+                                        return (
+                                            <div 
+                                                key={m.id} 
+                                                onClick={() => setSelectedMeasurement(m)}
+                                                className={`bg-white/[0.02] border border-white/5 p-3 flex flex-col gap-1 transition-all cursor-pointer active:scale-[0.98] ${isSelected ? 'border-[#C68346]/40 bg-[#C68346]/5' : 'hover:border-white/20'}`}
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <div className="text-[10px] font-bold uppercase">{new Date(m.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</div>
+                                                    <div className="text-[12px] font-black font-mono leading-none">{m.volumen_m3.toFixed(1)} <span className="text-[8px] opacity-10">m³</span></div>
+                                                </div>
+                                                {diff !== 0 && (
+                                                    <div className={`text-[8px] font-bold text-right ${diff > 0 ? 'text-green-500/40' : 'text-red-500/40'}`}>
+                                                        {diff > 0 ? '+' : ''}{diff.toFixed(1)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* PILLAR 4: MEASUREMENT DETAIL (DOSSIER) - w-[400px] */}
+                    <section className="w-[400px] flex flex-col bg-[#050505] overflow-hidden relative">
+                        {selectedMeasurement ? (
+                            <div className="flex-1 overflow-hidden animate-in fade-in duration-300">
+                                <MeasurementDetail 
+                                    measurement={selectedMeasurement} 
+                                    onClose={() => setSelectedMeasurement(null)} 
+                                />
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center opacity-5 grayscale">
+                                <span className="material-symbols-outlined text-6xl">inventory_2</span>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* Hidden PDF component for background capture */}
+                    <div className="fixed top-[5000px] left-0 pointer-events-none opacity-0">
+                        {selectedAsset && (
+                            <StockpileSummary asset={selectedAsset} history={selectedHistory} />
+                        )}
+                    </div>
+                </div>
+            </main>
         </div>
     );
 };

@@ -29,7 +29,7 @@ export const M3Select: React.FC<M3SelectProps> = ({
                     className="m3-select-input w-full h-14 pt-5 pb-1 px-4 text-base 
                         bg-antigravity-light-surface dark:bg-antigravity-dark-surface 
                         text-antigravity-light-text dark:text-antigravity-dark-text 
-                        rounded-t border-b border-antigravity-light-border dark:border-antigravity-dark-border 
+                        rounded-none border-b border-antigravity-light-border dark:border-antigravity-dark-border 
                         transition-all duration-200 outline-none focus:border-antigravity-accent appearance-none"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}

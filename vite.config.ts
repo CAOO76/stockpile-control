@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import federation from '@originjs/vite-plugin-federation'
+import { mockSyncPlugin } from './plugins/vite-mock-sync'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -9,11 +10,12 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: '0.0.0.0',
-      port: 5173,
+      port: 5190,
       strictPort: true,
     },
     plugins: [
       react(),
+      mockSyncPlugin(),
       // Solo cargar Module Federation si NO es build de Android/Capacitor
       !isAndroid && federation({
         name: 'stockpile-control-plugin',

@@ -41,7 +41,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
                         <nav className="app-nav flex gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0 scrollbar-none justify-center sm:justify-end">
                             <button
-                                className={`nav-button px-3 py-2 sm:px-4 sm:py-2 rounded-xl font-medium transition-all duration-200 border flex items-center gap-2 whitespace-nowrap
+                                className={`nav-button px-3 py-2 sm:px-4 sm:py-2 rounded-none font-medium transition-all duration-200 border flex items-center gap-2 whitespace-nowrap
                                     ${view === 'capture'
                                         ? 'bg-antigravity-accent text-white border-antigravity-accent shadow-lg shadow-antigravity-accent/20'
                                         : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}`}
@@ -51,7 +51,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                                 <span className="hidden xs:inline">Captura</span>
                             </button>
                             <button
-                                className={`nav-button px-3 py-2 sm:px-4 sm:py-2 rounded-xl font-medium transition-all duration-200 border flex items-center gap-2 whitespace-nowrap
+                                className={`nav-button px-3 py-2 sm:px-4 sm:py-2 rounded-none font-medium transition-all duration-200 border flex items-center gap-2 whitespace-nowrap
                                     ${view === 'vision'
                                         ? 'bg-antigravity-accent text-white border-antigravity-accent shadow-lg shadow-antigravity-accent/20'
                                         : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}`}
@@ -61,7 +61,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                                 <span className="hidden xs:inline">Visión</span>
                             </button>
                             <button
-                                className={`nav-button px-3 py-2 sm:px-4 sm:py-2 rounded-xl font-medium transition-all duration-200 border flex items-center gap-2 whitespace-nowrap
+                                className={`nav-button px-3 py-2 sm:px-4 sm:py-2 rounded-none font-medium transition-all duration-200 border flex items-center gap-2 whitespace-nowrap
                                     ${view === 'dashboard'
                                         ? 'bg-antigravity-accent text-white border-antigravity-accent shadow-lg shadow-antigravity-accent/20'
                                         : 'bg-transparent text-antigravity-light-text dark:text-antigravity-dark-text border-antigravity-light-border dark:border-antigravity-dark-border hover:bg-antigravity-accent/5'}
@@ -74,11 +74,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
                             </button>
                         </nav>
 
-                        <div className={`connectivity-indicator px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap
+                        <div className={`connectivity-indicator px-3 py-1.5 rounded-none text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap
                             ${isOnline
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                 : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
-                            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+                            <span className={`w-2 h-2 rounded-none ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
                             {isOnline ? 'Online' : 'Offline'}
                         </div>
                     </div>

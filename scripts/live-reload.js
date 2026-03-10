@@ -26,7 +26,7 @@ const emulatorDataPath = join(process.cwd(), '.firebase', 'emulator_data');
 try { mkdirSync(emulatorDataPath, { recursive: true }); } catch (e) { }
 
 console.log(`\n🚀 Starting Live Reload...`);
-console.log(`📍 Local IP Detected: http://${ip}:5173`);
+console.log(`📍 Local IP Detected: http://${ip}:5190`);
 
 const configPath = join(process.cwd(), 'capacitor.config.ts');
 let originalConfig = '';
@@ -43,7 +43,7 @@ let newConfig = originalConfig;
 if (originalConfig.includes('server: {')) {
     newConfig = originalConfig.replace(
         'server: {',
-        `server: {\n    url: 'http://${ip}:5173',\n`
+        `server: {\n    url: 'http://${ip}:5190',\n`
     );
 }
 

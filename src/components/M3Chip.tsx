@@ -22,7 +22,7 @@ export const M3Chip: React.FC<M3ChipProps> = ({
         <div
             onClick={onClick}
             className={clsx(
-                "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200 cursor-pointer select-none",
+                "inline-flex items-center gap-2 px-4 py-1.5 rounded-none text-sm font-medium transition-all duration-200 cursor-pointer select-none",
                 // Variantes básicas
                 {
                     'bg-[rgba(28,27,31,0.8)] text-white backdrop-blur-sm shadow-lg border border-white/10': variant === 'assist',

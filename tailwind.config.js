@@ -12,8 +12,8 @@ export default {
                 atkinson: ['"Atkinson Hyperlegible"', 'sans-serif'],
             },
             colors: {
-                // Industrial Mining Palette (Flat Colors Only)
-                primary: '#ff6b00',           // Deep Amber (Mining Industry Standard)
+                // Elite Industrial Minimalism Palette (Copper #C68346)
+                primary: 'var(--antigravity-accent)',           // Copper (MINREPORT Standard)
                 secondary: '#1e88e5',         // Steel Blue
                 success: '#43a047',           // Industrial Green  
                 warning: '#fdd835',           // Safety Yellow
@@ -44,14 +44,14 @@ export default {
                         muted: '#8b949e',
                         border: '#30363d',
                     },
-                    accent: '#ff6b00',
+                    accent: 'var(--antigravity-accent)',
                 }
             },
             borderRadius: {
-                'industrial': '4px',          // Sharp Industrial Edges
-                DEFAULT: '4px',
-                lg: '4px',
-                xl: '6px',
+                'industrial': '0px',          // Elite Industrial Minimalism (Sharp)
+                DEFAULT: '0px',
+                lg: '0px',
+                xl: '0px',
             },
             boxShadow: {
                 DEFAULT: 'none',

@@ -73,7 +73,7 @@ export function useStockpileData(query: StockpileDataQuery = {}) {
         });
 
         if (results.length > 0) {
-            return (results[0] as StockpileAsset).volume_m3;
+            return (results[0] as StockpileAsset).volume_m3 || 0;
         }
         return 0;
     };

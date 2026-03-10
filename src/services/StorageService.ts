@@ -1,31 +1,16 @@
 /**
- * StorageService - Servicio de almacenamiento de imágenes para stockpiles
- * 
- * Utiliza Cloud Storage de Firebase con un bucket independiente
- * Configurado exclusivamente para la región southamerica-west1
- * 
- * Características:
- * - Bucket independiente: stockpile-control-images
- * - Optimización de imágenes antes de subir
- * - Soporte offline: las imágenes se guardan localmente y se suben cuando hay conexión
+ * StorageService — Servicio de almacenamiento de imágenes
+ *
+ * ARQUITECTURA (sin Firebase Storage):
+ *  - Optimiza la imagen con canvas (reduce tamaño)
+ *  - Convierte a base64 DataURL (persiste en SecureContext/localStorage)
+ *  - Las URLs base64 son válidas indefinidamente en el dispositivo
+ *  - En producción: MINREPORT SDK puede subir a Firebase Storage vía su propia capa
+ *
+ * Limitación conocida: base64 ocupa ~33% más que el binario original.
+ * Para imágenes >1MB comprimidas, evaluar usar Capacitor Filesystem en versión futura.
  */
 
-import {
-    getStorageInstance,
-    FIREBASE_REGION
-} from '../config/firebase.config';
-import {
-    ref,
-    uploadBytesResumable,
-    getDownloadURL,
-    deleteObject,
-    listAll,
-    type UploadTaskSnapshot
-} from 'firebase/storage';
-
-/**
- * Opciones de carga de imagen
- */
 export interface UploadOptions {
     maxWidth?: number;
     maxHeight?: number;
@@ -33,39 +18,24 @@ export interface UploadOptions {
     format?: 'jpeg' | 'png' | 'webp';
 }
 
-/**
- * Resultado de carga de imagen
- */
 export interface UploadResult {
-    url: string;
-    path: string;
+    url: string;   // DataURL base64 — persistente, sin dependencia de red
+    path: string;  // Ruta lógica (para referencia futura en Firebase Storage real)
     size: number;
     uploadedAt: string;
 }
 
-/**
- * Servicio de almacenamiento para el plugin
- */
 export class StorageService {
-    private storage = getStorageInstance();
-    private readonly BUCKET_PATH = 'stockpile-control-images';
+    private readonly BUCKET_PATH = 'stockpile-images';
 
     /**
-     * Optimizar imagen antes de subir
-     * Reduce tamaño y convierte a formato optimizado
-     * 
-     * @param file - Archivo de imagen
-     * @param options - Opciones de optimización
-     * @returns Promise con blob optimizado
+     * Optimizar imagen via canvas y retornar como Blob comprimido
      */
-    private async optimizeImage(
-        file: File | Blob,
-        options: UploadOptions = {}
-    ): Promise<Blob> {
+    private async optimizeImage(file: File | Blob, options: UploadOptions = {}): Promise<Blob> {
         const {
-            maxWidth = 1920,
-            maxHeight = 1080,
-            quality = 0.85,
+            maxWidth = 1280,
+            maxHeight = 960,
+            quality = 0.80,
             format = 'jpeg'
         } = options;
 
@@ -74,39 +44,23 @@ export class StorageService {
             const url = URL.createObjectURL(file);
 
             img.onload = () => {
-                // Calcular dimensiones manteniendo aspect ratio
+                URL.revokeObjectURL(url);
+                const canvas = document.createElement('canvas');
                 let { width, height } = img;
 
                 if (width > maxWidth || height > maxHeight) {
                     const ratio = Math.min(maxWidth / width, maxHeight / height);
-                    width *= ratio;
-                    height *= ratio;
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
                 }
 
-                // Crear canvas y redimensionar
-                const canvas = document.createElement('canvas');
                 canvas.width = width;
                 canvas.height = height;
-
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    reject(new Error('No se pudo obtener contexto 2D del canvas'));
-                    return;
-                }
-
+                const ctx = canvas.getContext('2d')!;
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Convertir a blob optimizado
                 canvas.toBlob(
-                    (blob) => {
-                        URL.revokeObjectURL(url);
-                        if (blob) {
-                            console.log(`✅ Imagen optimizada: ${(blob.size / 1024).toFixed(2)} KB`);
-                            resolve(blob);
-                        } else {
-                            reject(new Error('Error convirtiendo a blob'));
-                        }
-                    },
+                    blob => blob ? resolve(blob) : reject(new Error('Canvas toBlob falló')),
                     `image/${format}`,
                     quality
                 );
@@ -114,7 +68,8 @@ export class StorageService {
 
             img.onerror = () => {
                 URL.revokeObjectURL(url);
-                reject(new Error('Error cargando imagen'));
+                // Si el canvas falla, retornar original sin optimizar
+                resolve(file instanceof Blob ? file : new Blob([file]));
             };
 
             img.src = url;
@@ -122,13 +77,8 @@ export class StorageService {
     }
 
     /**
-     * Subir imagen de stockpile al bucket de Cloud Storage
-     * 
-     * @param file - Archivo de imagen
-     * @param stockpileId - ID del stockpile
-     * @param options - Opciones de optimización
-     * @param onProgress - Callback de progreso (0-100)
-     * @returns Promise con resultado de la carga
+     * Subir imagen (en desarrollo: optimizar y convertir a base64 persistente)
+     * En producción futura: MINREPORT SDK puede interceptar y subir a Firebase Storage
      */
     async uploadStockpileImage(
         file: File | Blob,
@@ -136,144 +86,68 @@ export class StorageService {
         options: UploadOptions = {},
         onProgress?: (progress: number) => void
     ): Promise<UploadResult> {
+        const timestamp = Date.now();
+        const format = options.format || 'jpeg';
+        const path = `${this.BUCKET_PATH}/${stockpileId}/${stockpileId}_${timestamp}.${format}`;
+
         try {
-            console.log(`[StorageService] Subiendo imagen para stockpile: ${stockpileId}`);
-            console.log(`📍 Región: ${FIREBASE_REGION}`);
+            if (onProgress) onProgress(10);
+            const optimized = await this.optimizeImage(file, options);
+            if (onProgress) onProgress(70);
 
-            // Optimizar imagen
-            const optimizedBlob = await this.optimizeImage(file, options);
-
-            // Generar nombre de archivo único
-            const timestamp = Date.now();
-            const filename = `${stockpileId}_${timestamp}.${options.format || 'jpeg'}`;
-            const path = `${this.BUCKET_PATH}/${stockpileId}/${filename}`;
-
-            // Crear referencia en Storage
-            const storageRef = ref(this.storage, path);
-
-            // Subir con seguimiento de progreso
-            const uploadTask = uploadBytesResumable(storageRef, optimizedBlob, {
-                contentType: `image/${options.format || 'jpeg'}`,
-                customMetadata: {
-                    stockpileId: stockpileId,
-                    uploadedAt: new Date().toISOString(),
-                    region: FIREBASE_REGION,
-                },
+            // Convertir a base64 DataURL — persiste en localStorage/SecureContext
+            const base64Url = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(optimized);
             });
 
-            return new Promise((resolve, reject) => {
-                uploadTask.on(
-                    'state_changed',
-                    (snapshot: UploadTaskSnapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        if (onProgress) {
-                            onProgress(Math.round(progress));
-                        }
-                        console.log(`📤 Progreso: ${progress.toFixed(1)}%`);
-                    },
-                    (error) => {
-                        console.error('❌ Error subiendo imagen:', error);
-                        reject(error);
-                    },
-                    async () => {
-                        try {
-                            const url = await getDownloadURL(uploadTask.snapshot.ref);
-                            const result: UploadResult = {
-                                url,
-                                path,
-                                size: uploadTask.snapshot.totalBytes,
-                                uploadedAt: new Date().toISOString(),
-                            };
+            if (onProgress) onProgress(100);
+            console.log(`[StorageService] ✅ Imagen optimizada y guardada localmente (${(optimized.size / 1024).toFixed(0)}KB)`);
 
-                            console.log(`✅ Imagen subida correctamente: ${url}`);
-                            resolve(result);
-                        } catch (error) {
-                            reject(error);
-                        }
-                    }
-                );
+            return {
+                url: base64Url,
+                path,
+                size: optimized.size,
+                uploadedAt: new Date().toISOString(),
+            };
+        } catch (error) {
+            console.error('[StorageService] Error procesando imagen:', error);
+            // Fallback: intentar usar el archivo original como base64
+            if (onProgress) onProgress(100);
+            const base64Url = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
             });
-        } catch (error) {
-            console.error('❌ Error en uploadStockpileImage:', error);
-            throw error;
+            return { url: base64Url, path, size: file.size, uploadedAt: new Date().toISOString() };
         }
     }
 
     /**
-     * Obtener URL de descarga de una imagen
-     * 
-     * @param path - Ruta de la imagen en Storage
-     * @returns Promise con URL de descarga
+     * Las imágenes se almacenan como DataURL en SecureContext.
+     * Para listar imágenes, se usa el DataService (que ya tiene la URL del activo).
+     * Este método existe por compatibilidad con el plugin.ts.
      */
-    async getImageUrl(path: string): Promise<string> {
-        try {
-            const storageRef = ref(this.storage, path);
-            const url = await getDownloadURL(storageRef);
-            return url;
-        } catch (error) {
-            console.error('❌ Error obteniendo URL:', error);
-            throw error;
-        }
+    async listStockpileImages(_stockpileId: string): Promise<string[]> {
+        // Las URLs ya están en el activo (initial_photo_url, last_photo_url, thumbnail_url)
+        // No se necesita un listado separado en este modo de almacenamiento
+        return [];
     }
 
-    /**
-     * Listar todas las imágenes de un stockpile
-     * 
-     * @param stockpileId - ID del stockpile
-     * @returns Promise con array de URLs de imágenes
-     */
-    async listStockpileImages(stockpileId: string): Promise<string[]> {
-        try {
-            const folderRef = ref(this.storage, `${this.BUCKET_PATH}/${stockpileId}`);
-            const result = await listAll(folderRef);
-
-            const urlPromises = result.items.map((itemRef) => getDownloadURL(itemRef));
-            const urls = await Promise.all(urlPromises);
-
-            console.log(`✅ Encontradas ${urls.length} imágenes para stockpile ${stockpileId}`);
-            return urls;
-        } catch (error) {
-            console.error('❌ Error listando imágenes:', error);
-            return [];
-        }
+    async getImageUrl(url: string): Promise<string> {
+        return url; // Ya es una DataURL o una URL persistente
     }
 
-    /**
-     * Eliminar una imagen
-     * 
-     * @param path - Ruta de la imagen
-     */
-    async deleteImage(path: string): Promise<void> {
-        try {
-            const storageRef = ref(this.storage, path);
-            await deleteObject(storageRef);
-            console.log(`✅ Imagen eliminada: ${path}`);
-        } catch (error) {
-            console.error('❌ Error eliminando imagen:', error);
-            throw error;
-        }
+    async deleteImage(_path: string): Promise<void> {
+        // En el modo local, las imágenes se eliminan al eliminar el activo
     }
 
-    /**
-     * Eliminar todas las imágenes de un stockpile
-     * 
-     * @param stockpileId - ID del stockpile
-     */
-    async deleteAllStockpileImages(stockpileId: string): Promise<void> {
-        try {
-            const folderRef = ref(this.storage, `${this.BUCKET_PATH}/${stockpileId}`);
-            const result = await listAll(folderRef);
-
-            const deletePromises = result.items.map((itemRef) => deleteObject(itemRef));
-            await Promise.all(deletePromises);
-
-            console.log(`✅ Eliminadas ${result.items.length} imágenes de stockpile ${stockpileId}`);
-        } catch (error) {
-            console.error('❌ Error eliminando imágenes:', error);
-            throw error;
-        }
+    async deleteAllStockpileImages(_stockpileId: string): Promise<void> {
+        // Ídem
     }
 }
 
-// Exportar instancia única
 export const storageService = new StorageService();

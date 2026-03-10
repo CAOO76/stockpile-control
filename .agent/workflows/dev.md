@@ -2,30 +2,49 @@
 description: How to work without interruptions using Live Reload and Android Studio
 ---
 
-# Flujo de Trabajo Sin Interrupciones
+# Flujos de Desarrollo
 
-Este flujo te permite programar en la web y ver los cambios instantáneamente en el emulador de Android sin tener que recompilar ni reiniciar Android Studio.
+## 🏗️ dev:studio — Desarrollo Offline-First (recomendado para pruebas de campo)
 
-## Comandos del Teclado
+El APK se instala con datos locales. Permite desconectar el cable y seguir probando.
 
-### 1. Iniciar todo con un comando
-Ejecuta esto en tu terminal:
+// turbo
+1. Ejecuta el script unificado:
+```bash
+npm run dev:studio
+```
+Este comando hace todo en secuencia:
+1. **Compila** → APK de producción sin dependencia al servidor de desarrollo
+2. **Sincroniza** → copia los assets al proyecto nativo Android
+3. **Abre** → lanza Android Studio para instalar en el dispositivo
+4. **Sirve** → inicia servidor Vite en `http://localhost:5190` para escritorio
+
+2. Instala el APK desde Android Studio (botón ▶ Run)
+3. Abre el navegador en `http://localhost:5190` para escritorio
+4. **Desconecta el cable USB** — el dispositivo sigue funcionando offline
+
+> [!IMPORTANT]
+> Todos los datos se guardan en `localStorage` del dispositivo. Las fotos se guardan como DataURL base64. No se necesita internet ni el servidor de desarrollo para funcionar.
+
+---
+
+## ⚡ android:dev — Live Reload (para desarrollo activo con emuladores)
+
+Para ver cambios en tiempo real en el dispositivo mientras editas código.
+
+// turbo
+1. Ejecuta:
 ```bash
 npm run android:dev
 ```
-Este comando hace tres cosas por ti:
-1. **Sincroniza**: Asegura que Android sepa que debe buscar el servidor de desarrollo.
-2. **Abre**: Lanza Android Studio automáticamente.
-3. **Sirve**: Arranca el servidor de Vite con Live Reload activo.
+Este comando:
+1. Inyecta la IP local en `capacitor.config.ts`
+2. Sincroniza y abre Android Studio
+3. Inicia los emuladores de Firebase
+4. Inicia servidor Vite con hot reload
 
-## Cómo trabajar sin interrupciones
-
-1. **En Android Studio**: Dale al botón "Run" (el icono verde de Play) para lanzar la app en el emulador.
-2. **En tu Editor (VS Code / Cursor)**: Modifica cualquier archivo en `src/`.
-3. **Resultado**: Verás el cambio en el emulador en menos de un segundo.
+2. En Android Studio: presiona ▶ Run
+3. Edita archivos en `src/` y los cambios aparecen instantáneamente en el dispositivo
 
 > [!TIP]
-> No cierres la terminal donde corre `npm run android:dev`. Si necesitas sincronizar cambios nativos (como un nuevo plugin), detén el comando con `Ctrl+C` y vuelve a ejecutarlo.
-
-> [!IMPORTANT]
-> Asegúrate de que tu celular/emulador y tu Mac estén en la misma red Wi-Fi si usas un dispositivo físico.
+> Requiere que el celular y el iMac estén en la misma red Wi-Fi. Los datos van a los emuladores de Firebase, no al dispositivo. Al desconectar el cable, la app pierde acceso a los datos.

@@ -1,5 +1,6 @@
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 import * as htmlToImage from 'html-to-image';
 import jsPDF from 'jspdf';
 
@@ -54,22 +55,35 @@ export const generatePDFBlob = async (elementId: string): Promise<Blob> => {
     }
 
     // Extra safety delay for rendering engine
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Force scroll and repaint to "wake up" the WebView rendering
+    window.scrollTo(0, 0);
+    element.scrollIntoView();
 
     // Ensure dimension reflow
-    const width = element.offsetWidth || 794; // fallback to A4 width at 96dpi
-    if (width === 0) {
-        console.warn('[PDF Helper] Element width is 0, using fallback');
-    }
+    const width = 800; // Fixed width for A4 consistency
 
     try {
-        // 1. Capture the entire element height as JPEG
+        // Step 1: Preliminary call to "prime" the rendering engine
+        // This is a known fix for html-to-image on some mobile WebViews
+        await htmlToImage.toJpeg(element, { quality: 0.1, pixelRatio: 1 });
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Step 2: Final high-quality capture
         console.log('[PDF Helper] Capturing element via html-to-image...');
         const dataUrl = await htmlToImage.toJpeg(element, {
-            quality: 0.9,
-            pixelRatio: 1.5,
+            quality: 0.8,
+            pixelRatio: 1, // Stay safe at 1 on mobile to avoid memory crashes
             backgroundColor: '#ffffff',
             width: width,
+            style: {
+                transform: 'scale(1)',
+                transformOrigin: 'top left',
+                display: 'flex',
+                visibility: 'visible',
+                opacity: '1',
+            }
         });
 
         if (!dataUrl || dataUrl === 'data:,') {
@@ -124,15 +138,28 @@ export const generatePDFBlob = async (elementId: string): Promise<Blob> => {
 export const downloadPDF = async (elementId: string, fileName: string): Promise<void> => {
     try {
         const pdfBlob = await generatePDFBlob(elementId);
-        const base64Data = await blobToBase64(pdfBlob);
 
-        await Filesystem.writeFile({
-            path: `${fileName}.pdf`,
-            data: base64Data,
-            directory: Directory.Documents
-        });
+        if (Capacitor.isNativePlatform()) {
+            const base64Data = await blobToBase64(pdfBlob);
 
-        alert(`PDF guardado en Documents/${fileName}.pdf`);
+            await Filesystem.writeFile({
+                path: `${fileName}.pdf`,
+                data: base64Data,
+                directory: Directory.Documents
+            });
+
+            alert(`PDF guardado en Documents/${fileName}.pdf`);
+        } else {
+            // Browser Web Fallback para Desktop
+            const url = window.URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        }
     } catch (error: any) {
         console.error('[PDF Helper] Download ERROR:', error);
         alert(`Error al descargar: ${error.message || 'Error desconocido'}`);

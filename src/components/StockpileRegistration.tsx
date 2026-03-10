@@ -142,22 +142,22 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                 <div className="flex gap-3">
                     {isSaved ? (
                         <>
-                            <button onClick={handleBack} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center active:scale-90 border border-white/5">
+                            <button onClick={handleBack} className="w-12 h-12 rounded-none bg-white/5 flex items-center justify-center active:scale-90 border border-white/5">
                                 <span className="material-symbols-outlined text-primary">arrow_back</span>
                             </button>
-                            <button onClick={() => setIsSaved(false)} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center active:scale-90 border border-white/5 shadow-[0_0_15px_rgba(255,176,0,0.1)]">
+                            <button onClick={() => setIsSaved(false)} className="w-12 h-12 rounded-none bg-white/5 flex items-center justify-center active:scale-90 border border-white/5 shadow-[0_0_15px_rgba(255,176,0,0.1)]">
                                 <span className="material-symbols-outlined text-primary">edit</span>
                             </button>
                         </>
                     ) : (
                         <>
-                            <button onClick={onCancel} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center active:scale-90 border border-white/5">
+                            <button onClick={onCancel} className="w-12 h-12 rounded-none bg-white/5 flex items-center justify-center active:scale-90 border border-white/5">
                                 <span className="material-symbols-outlined text-red-500">close</span>
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving || !name.trim() || !locationRef.trim() || !photo}
-                                className="w-16 h-12 rounded-2xl bg-primary flex items-center justify-center active:scale-90 shadow-[0_0_20px_rgba(255,176,0,0.2)] disabled:opacity-20 disabled:grayscale"
+                                className="w-16 h-12 rounded-none bg-primary flex items-center justify-center active:scale-90 shadow-[0_0_20px_rgba(255,176,0,0.2)] disabled:opacity-20 disabled:grayscale"
                             >
                                 {isSaving ? <span className="material-symbols-outlined animate-spin text-black">sync</span> : <span className="material-symbols-outlined text-black font-bold">save</span>}
                             </button>
@@ -171,7 +171,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                     <h3 className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/20">Evidencia Inicial</h3>
                     <div
                         onClick={takePhoto}
-                        className="relative w-full aspect-video bg-white/5 rounded-3xl border border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden active:bg-white/10"
+                        className="relative w-full aspect-video bg-white/5 rounded-none border border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden active:bg-white/10"
                     >
                         {photo ? (
                             <>
@@ -180,7 +180,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                                 {!isSaved && (
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
-                                        className="absolute top-4 right-4 w-10 h-10 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10"
+                                        className="absolute top-4 right-4 w-10 h-10 bg-black/60 backdrop-blur-md rounded-none flex items-center justify-center border border-white/10"
                                     >
                                         <span className="material-symbols-outlined text-white/60">delete</span>
                                     </button>
@@ -200,7 +200,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                 </div>
 
                 <div className={`space-y-4 ${isSaved ? 'opacity-60 pointer-events-none' : ''}`}>
-                    <M3TextField label="ID / NOMBRE" value={name} onChange={setName} placeholder="Ej: A9" autoComplete="off" />
+                    <M3TextField label="ID / NOMBRE" value={name} onChange={setName} placeholder=" " autoComplete="off" />
                     <M3Select
                         label="CLASE"
                         value={clase}
@@ -211,9 +211,9 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                         ]}
                         onChange={(v) => setClase(v as any)}
                     />
-                    <M3TextField label="REFERENCIA UBICACIÓN" value={locationRef} onChange={setLocationRef} placeholder="Ej: Sector Chancado 1" autoComplete="off" />
+                    <M3TextField label="REFERENCIA UBICACIÓN" value={locationRef} onChange={setLocationRef} placeholder=" " autoComplete="off" />
 
-                    <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+                    <div className="p-3 bg-white/5 rounded-none border border-white/5">
                         <span className="text-[8px] font-bold uppercase tracking-[0.1em] text-white/20 block">GEODATOS</span>
                         <div className="flex justify-between items-center mt-1">
                             <span className="text-xs font-bold text-primary/60">PRECISIÓN: {gps ? `±${gps.acc.toFixed(1)} m` : '---'}</span>

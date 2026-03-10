@@ -7,9 +7,10 @@
   "scripts": {
     "dev": "vite",
     "dev:live": "node scripts/live-reload.js",
+    "dev:studio": "node scripts/set-dev-ip.js && npm run build:android && npx cap sync android && npx cap open android && npm run dev",
     "android:dev": "node scripts/live-reload.js",
+    "android:offline": "node scripts/set-dev-ip.js && npm run build:android && npx cap sync android && npx cap open android",
     "android:sync": "npx cap sync android",
-    "android:open": "npx cap open android",
     "backup": "zip -r ../stockpile-control-backup-$(date +%Y%m%d-%H%M%S).zip . -x '*.git*' 'node_modules/*' 'dist/*' '.firebase/*'",
     "git:push": "bash scripts/git-push.sh",
     "sync": "npm run backup && npm run git:push",

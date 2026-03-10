@@ -30,7 +30,7 @@ export const MobileHome: React.FC<MobileHomeProps> = ({ onStartNewScan, onViewRe
                     className="flex flex-col items-center space-y-4 active:scale-90 transition-all group"
                     aria-label="Ver registros de stock"
                 >
-                    <div className="w-32 h-32 landscape:w-28 landscape:h-28 flex items-center justify-center rounded-full bg-white/5 border-2 border-white/10 group-active:bg-white/10 group-active:border-white transition-colors overflow-hidden">
+                    <div className="w-32 h-32 landscape:w-28 landscape:h-28 flex items-center justify-center rounded-none bg-white/5 border-2 border-white/10 group-active:bg-white/10 group-active:border-white transition-colors overflow-hidden">
                         <span className="material-symbols-outlined text-[64px] landscape:text-[56px] text-white/40 group-active:text-white transition-all">list_alt</span>
                     </div>
                     <span className="text-xs font-bold uppercase tracking-[0.3em] text-white/30 group-active:text-white">Stock</span>
@@ -42,7 +42,7 @@ export const MobileHome: React.FC<MobileHomeProps> = ({ onStartNewScan, onViewRe
                     className="flex flex-col items-center space-y-4 active:scale-90 transition-all group"
                     aria-label="Iniciar nuevo registro de acopio"
                 >
-                    <div className="w-32 h-32 landscape:w-28 landscape:h-28 flex items-center justify-center rounded-full bg-primary/5 border-2 border-primary/20 group-active:bg-primary/20 group-active:border-primary transition-colors overflow-hidden">
+                    <div className="w-32 h-32 landscape:w-28 landscape:h-28 flex items-center justify-center rounded-none bg-primary/5 border-2 border-primary/20 group-active:bg-primary/20 group-active:border-primary transition-colors overflow-hidden">
                         <span className="material-symbols-outlined text-[64px] landscape:text-[56px] font-bold text-primary transition-all">list_alt_add</span>
                     </div>
                     <span className="text-xs font-bold uppercase tracking-[0.3em] text-primary group-active:text-white">Nuevo Registro</span>

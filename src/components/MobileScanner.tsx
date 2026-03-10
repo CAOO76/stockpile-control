@@ -31,7 +31,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
 
     // Inputs del operador
     const [classification, setClassification] = useState<'COLPA' | 'GRANSA' | 'FINO' | null>(null);
-    const [density, setDensity] = useState('1.66');
+    const [density, setDensity] = useState('');
 
     // Metadata
     const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +43,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
         alpha: 0, beta: 0, gamma: 0,
         accel_x: 0, accel_y: 0, accel_z: 0
     });
-    const [isGroundDetected, setIsGroundDetected] = useState(false);
+    const [, setIsGroundDetected] = useState(false);
 
     // Datos de textura capturados durante el escaneo
     const [textureData, setTextureData] = useState<{ mean: number; stdDev: number } | null>(null);
@@ -108,7 +108,8 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
     const captureReferencePhoto = async () => {
         try {
             const image = await Camera.getPhoto({
-                quality: 80,
+                quality: 60,
+                width: 800,
                 allowEditing: false,
                 resultType: CameraResultType.DataUrl,
                 source: CameraSource.Camera,
@@ -135,7 +136,8 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
     const captureScanPhoto = async () => {
         try {
             const image = await Camera.getPhoto({
-                quality: 70,
+                quality: 50,
+                width: 600,
                 allowEditing: false,
                 resultType: CameraResultType.DataUrl,
                 source: CameraSource.Camera,
@@ -266,11 +268,11 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
             } catch (uploadError) {
                 console.warn('[Scanner] Fallo subida imagen (Offline mode):', uploadError);
                 uploadFailed = true;
-                // Usamos la imagen local (base64) si es pequeña, o un placeholder
-                if (photo && photo.length < 800000) { // Limite 800kb aprox para Firestore
+                // Usamos la imagen local (base64) si es moderada, o un placeholder
+                if (photo && photo.length < 2000000) { // Límite 2MB aprox para almacenamiento local
                     finalPhotoUrl = photo;
                 } else {
-                    finalPhotoUrl = 'data:image/jpeg;base64,OFFLINE_PENDING_SYNC';
+                    finalPhotoUrl = 'data:image/jpeg;base64,OFFLINE_PENDING_SAVE_TOO_LARGE';
                 }
             }
 
@@ -343,7 +345,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
             {/* Header Técnico (Fijo) */}
             <header className="flex-none pt-14 pb-4 px-6 flex items-center justify-between bg-black z-50">
                 <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
+                    <button onClick={onBack} className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
                         <span className="material-symbols-outlined text-3xl text-primary font-bold">arrow_back</span>
                     </button>
                     <div className="flex flex-col">
@@ -368,7 +370,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                         <span className="text-[10px] font-black tracking-[0.4em] text-white/20 uppercase">EVIDENCIA TÉCNICA</span>
                         <div
                             onClick={photo ? undefined : captureReferencePhoto}
-                            className={`relative w-full aspect-video rounded-3xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center
+                            className={`relative w-full aspect-video rounded-none border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center
                                     ${photo ? 'border-primary/40 bg-black' : 'border-white/10 bg-white/5 active:bg-white/10'}`}
                         >
                             {photo ? (
@@ -381,7 +383,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
-                                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/10"
+                                        className="absolute top-4 right-4 w-10 h-10 rounded-none bg-black/60 backdrop-blur-md flex items-center justify-center border border-white/10"
                                     >
                                         <span className="material-symbols-outlined text-white/60">delete</span>
                                     </button>
@@ -401,7 +403,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                             <span className="text-[10px] font-black tracking-[0.4em] text-white/20 uppercase">ESCANEO TÉCNICO</span>
 
                             {/* Indicador de progreso */}
-                            <div className="bg-[#111] border border-white/5 rounded-2xl p-6">
+                            <div className="bg-[#111] border border-white/5 rounded-none p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-3">
                                         <span className="material-symbols-outlined text-2xl text-white/40">photo_library</span>
@@ -418,7 +420,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                 </div>
 
                                 {/* Barra de progreso */}
-                                <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                                <div className="w-full h-2 bg-white/5 rounded-none overflow-hidden">
                                     <div
                                         className="h-full bg-primary transition-all duration-300"
                                         style={{ width: `${(scanPhotos.length / targetPhotoCount) * 100}%` }}
@@ -428,7 +430,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
 
                             {/* Instrucciones */}
                             {!isScanning && scanPhotos.length === 0 && (
-                                <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
+                                <div className="bg-primary/5 border border-primary/20 rounded-none p-4">
                                     <p className="text-[10px] text-primary/60 leading-relaxed">
                                         <span className="font-black">INSTRUCCIONES:</span> Captura {targetPhotoCount} fotos del acopio desde diferentes ángulos y posiciones. Muévete alrededor del acopio para obtener una cobertura completa.
                                     </p>
@@ -439,7 +441,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                             {!isScanning ? (
                                 <button
                                     onClick={startScan}
-                                    className="w-full h-20 rounded-2xl bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95 transition-all flex items-center justify-center gap-4"
+                                    className="w-full h-20 rounded-none bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95 transition-all flex items-center justify-center gap-4"
                                 >
                                     <span className="material-symbols-outlined text-4xl">shutter_speed</span>
                                     <span className="text-lg tracking-tight">INICIAR ESCANEO</span>
@@ -448,7 +450,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                 <div className="space-y-3">
                                     <button
                                         onClick={captureScanPhoto}
-                                        className="w-full h-20 rounded-2xl bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95 transition-all flex items-center justify-center gap-4"
+                                        className="w-full h-20 rounded-none bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95 transition-all flex items-center justify-center gap-4"
                                     >
                                         <span className="material-symbols-outlined text-4xl">photo_camera</span>
                                         <span className="text-lg tracking-tight">CAPTURAR FOTO {scanPhotos.length + 1}</span>
@@ -457,7 +459,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                     {scanPhotos.length >= targetPhotoCount && (
                                         <button
                                             onClick={stopScan}
-                                            className="w-full h-16 rounded-2xl bg-green-500 text-white font-black shadow-[0_0_30px_rgba(34,197,94,0.2)] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                            className="w-full h-16 rounded-none bg-green-500 text-white font-black shadow-[0_0_30px_rgba(34,197,94,0.2)] active:scale-95 transition-all flex items-center justify-center gap-3"
                                         >
                                             <span className="material-symbols-outlined text-3xl">check_circle</span>
                                             <span className="text-base tracking-tight">FINALIZAR ESCANEO</span>
@@ -472,7 +474,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                     {scanComplete && (
                         <div className="space-y-10">
                             {/* Confirmación de escaneo */}
-                            <div className="bg-primary/10 border border-primary/30 rounded-2xl p-4 flex items-center gap-3">
+                            <div className="bg-primary/10 border border-primary/30 rounded-none p-4 flex items-center gap-3">
                                 <span className="material-symbols-outlined text-3xl text-primary">check_circle</span>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-black text-primary">ESCANEO COMPLETADO</span>
@@ -490,7 +492,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                         <button
                                             key={c}
                                             onClick={() => setClassification(c)}
-                                            className={`h-16 rounded-2xl font-black text-sm transition-all border-2 ${classification === c
+                                            className={`h-16 rounded-none font-black text-sm transition-all border-2 ${classification === c
                                                 ? 'bg-primary text-black border-primary'
                                                 : 'bg-white/5 text-white/40 border-white/10'
                                                 }`}
@@ -514,14 +516,14 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                         const val = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
                                         setDensity(val);
                                     }}
-                                    className="w-full !bg-[#1a1a1a] border-2 border-white/10 rounded-2xl h-16 px-6 text-3xl font-black !text-white outline-none focus:border-primary transition-all text-center tracking-tight"
-                                    placeholder="0.00"
+                                    className="w-full !bg-[#1a1a1a] border-2 border-white/10 rounded-none h-16 px-6 text-3xl font-black !text-white outline-none focus:border-primary transition-all text-center tracking-tight"
+                                    placeholder=" "
                                     autoComplete="off"
                                 />
                             </div>
 
                             {/* 4. VOLUMEN ESTIMADO (Solo lectura - IA lo calcula después) */}
-                            <div className="bg-[#111] border border-white/5 rounded-3xl p-8 flex flex-col items-center gap-2">
+                            <div className="bg-[#111] border border-white/5 rounded-none p-8 flex flex-col items-center gap-2">
                                 <span className="text-[11px] font-black text-white/30 tracking-[0.4em] uppercase">VOLUMEN ESTIMADO</span>
                                 <div className="flex items-baseline gap-3">
                                     <span className="text-6xl font-black text-white/20 tracking-tighter">0.0</span>
@@ -538,7 +540,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving || !classification || !density}
-                                className={`w-full max-w-xs h-20 rounded-2xl flex items-center justify-center gap-4 transition-all
+                                className={`w-full max-w-xs h-20 rounded-none flex items-center justify-center gap-4 transition-all
                                         ${isSaving || !classification || !density
                                         ? 'bg-white/5 text-white/20'
                                         : 'bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95'

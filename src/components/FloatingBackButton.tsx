@@ -25,7 +25,7 @@ export const FloatingBackButton: React.FC<FloatingBackButtonProps> = ({ currentV
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.5, x: -20 }}
                 onClick={onBack}
-                className="fixed bottom-10 left-8 z-[100] w-24 h-24 bg-black/40 backdrop-blur-xl border-2 border-primary/20 rounded-full flex items-center justify-center text-primary active:scale-90 active:bg-primary/20 active:border-primary transition-all shadow-[0_0_20px_rgba(255,176,0,0.2)] overflow-hidden"
+                className="fixed bottom-10 left-8 z-[100] w-24 h-24 bg-black/40 backdrop-blur-xl border-2 border-primary/20 rounded-none flex items-center justify-center text-primary active:scale-90 active:bg-primary/20 active:border-primary transition-all shadow-[0_0_20px_rgba(255,176,0,0.2)] overflow-hidden"
                 aria-label="Regresar"
             >
                 <span className="material-symbols-outlined text-[48px] font-bold">arrow_back</span>
