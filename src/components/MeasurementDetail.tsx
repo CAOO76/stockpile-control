@@ -108,9 +108,14 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                             </span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 bg-[#C68346]/10 px-3 py-2 rounded-sm border border-[#C68346]/20">
-                        <span className="material-symbols-outlined text-[16px] text-[#C68346]">satellite_alt</span>
-                        <span className="text-[11px] font-black text-[#C68346] uppercase tracking-wider">±{measurement.location_metadata?.accuracy.toFixed(1)}M</span>
+                    <div className="flex items-center gap-3 bg-[#C68346]/10 px-4 py-2 border border-[#C68346]/20">
+                        <span className="material-symbols-outlined text-[18px] text-[#C68346]">satellite_alt</span>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.1em] leading-none mb-1">PRECISIÓN_H</span>
+                            <span className="text-[14px] font-bold font-mono text-[#C68346]">
+                                ±{measurement.location_metadata?.accuracy.toFixed(1)}M
+                            </span>
+                        </div>
                     </div>
                 </div>
 

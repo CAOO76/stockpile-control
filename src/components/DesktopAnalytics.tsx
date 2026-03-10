@@ -330,22 +330,27 @@ export const DesktopAnalytics: React.FC = () => {
                                     <div className="bg-white/[0.02] border border-white/5 px-8 py-4 mb-6 flex items-center justify-between">
                                         <div className="flex items-center gap-12">
                                             <div className="flex flex-col">
-                                                <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2">LATITUD_CENTRAL</span>
+                                                <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2 text-[#C68346]">LATITUD</span>
                                                 <span className="text-[18px] font-bold font-mono text-white/90 tabular-nums">
                                                     {selectedAsset.geo_point?.latitude.toFixed(6) || '0.000000'}
                                                 </span>
                                             </div>
                                             <div className="w-px h-10 bg-white/10"></div>
                                             <div className="flex flex-col">
-                                                <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2">LONGITUD_CENTRAL</span>
+                                                <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2 text-[#C68346]">LONGITUD</span>
                                                 <span className="text-[18px] font-bold font-mono text-white/90 tabular-nums">
                                                     {selectedAsset.geo_point?.longitude.toFixed(6) || '0.000000'}
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3 bg-[#C68346]/10 px-4 py-2 border border-[#C68346]/20">
-                                            <span className="material-symbols-outlined text-[20px] text-[#C68346]">my_location</span>
-                                            <span className="text-[12px] font-black text-[#C68346] uppercase tracking-widest text-shadow-glow">ORIGEN_GEO_VALIDADO</span>
+                                            <span className="material-symbols-outlined text-[20px] text-[#C68346]">satellite_alt</span>
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.1em] leading-none mb-1">PRECISIÓN_H</span>
+                                                <span className="text-[14px] font-bold font-mono text-[#C68346]">
+                                                    ±{(currentMeasurement?.location_metadata?.accuracy || 0).toFixed(1)}M
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
