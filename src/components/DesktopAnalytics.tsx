@@ -138,21 +138,21 @@ export const DesktopAnalytics: React.FC = () => {
             <main className="flex-1 flex flex-col overflow-hidden">
                 
                 {/* TOP HUD: GLOBAL KPIs - COMPACT VERSION */}
-                <section className="h-16 border-b border-white/5 bg-white/[0.02] flex items-center px-4 overflow-hidden">
-                    <div className="flex items-center h-full px-8 border-r border-white/5 group">
-                        <span className="text-[10px] font-black opacity-20 uppercase tracking-[0.3em] mr-6">ACTIVOS</span>
-                        <div className="text-2xl font-black font-mono text-white">{assets.length}</div>
+                <section className="h-20 border-b border-white/5 bg-white/[0.02] flex items-center px-4 overflow-hidden">
+                    <div className="flex items-center h-full px-10 border-r border-white/5 group">
+                        <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] mr-8">ACTIVOS</span>
+                        <div className="text-4xl font-black font-mono text-white tracking-tighter">{assets.length}</div>
                     </div>
-                    <div className="flex items-center h-full px-8 border-r border-white/5 group">
-                        <span className="text-[10px] font-black opacity-20 uppercase tracking-[0.3em] mr-6">VOLUMEN_TOTAL</span>
-                        <div className="text-2xl font-black font-mono text-[#C68346]">
-                            {stats.totalVolume.toLocaleString('es-CL', { maximumFractionDigits: 1 })} <span className="text-[11px] opacity-20 text-white">m³</span>
+                    <div className="flex items-center h-full px-10 border-r border-white/5 group">
+                        <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] mr-8">VOLUMEN_TOTAL</span>
+                        <div className="text-4xl font-black font-mono text-[#C68346] tracking-tighter">
+                            {stats.totalVolume.toLocaleString('es-CL', { maximumFractionDigits: 1 })} <span className="text-sm opacity-20 text-white font-sans">m³</span>
                         </div>
                     </div>
-                    <div className="flex items-center h-full px-8 border-r border-white/5 group">
-                        <span className="text-[10px] font-black opacity-20 uppercase tracking-[0.3em] mr-6">PESO_TOTAL</span>
-                        <div className="text-2xl font-black font-mono text-[#C68346]">
-                            {stats.totalWeight.toLocaleString('es-CL', { maximumFractionDigits: 0 })} <span className="text-[11px] opacity-20 text-white">t</span>
+                    <div className="flex items-center h-full px-10 border-r border-white/5 group">
+                        <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] mr-8">PESO_TOTAL</span>
+                        <div className="text-4xl font-black font-mono text-[#C68346] tracking-tighter">
+                            {stats.totalWeight.toLocaleString('es-CL', { maximumFractionDigits: 0 })} <span className="text-sm opacity-20 text-white font-sans">t</span>
                         </div>
                     </div>
                     <div className="flex-1 flex items-center justify-end px-6 gap-4">
@@ -166,8 +166,8 @@ export const DesktopAnalytics: React.FC = () => {
                 </section>
                 <div className="flex-1 flex overflow-hidden">
                     
-                    {/* PILLAR 1: ASSET MASTER LIST (MASTER) - w-80 */}
-                    <section className="w-80 border-r border-white/10 flex flex-col bg-black z-10">
+                    {/* PILLAR 1: ASSET MASTER LIST (MASTER) - w-96 */}
+                    <section className="w-96 border-r border-white/10 flex flex-col bg-black z-10">
                         <div className="flex-1 overflow-y-auto scrollbar-none">
                             {assets.map(asset => {
                                 const isSelected = selectedAssetId === asset.id;
@@ -185,36 +185,36 @@ export const DesktopAnalytics: React.FC = () => {
                                             setSelectedAssetId(asset.id!);
                                             setSelectedMeasurement(null);
                                         }}
-                                        className={`p-5 border-b border-white/[0.05] cursor-pointer transition-all hover:bg-white/[0.03] flex flex-col gap-3 relative ${isSelected ? 'bg-[#C68346]/10' : ''}`}
+                                        className={`p-6 border-b border-white/[0.05] cursor-pointer transition-all hover:bg-white/[0.03] flex flex-col gap-4 relative ${isSelected ? 'bg-[#C68346]/10' : ''}`}
                                     >
                                         {isSelected && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#C68346]"></div>}
                                         <div className="flex justify-between items-start">
-                                            <div className="font-black uppercase tracking-tight text-sm text-white">{asset.name}</div>
-                                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-sm ${asset.clase === 'mineral' ? 'bg-[#C68346] text-black' : 'bg-white/10 text-white/40'}`}>
-                                                {asset.clase.substring(0,3)}
+                                            <div className="font-black uppercase tracking-tight text-base text-white">{asset.name}</div>
+                                            <span className={`text-[11px] font-black uppercase px-2.5 py-1 rounded-sm ${asset.clase === 'mineral' ? 'bg-[#C68346] text-black' : 'bg-white/10 text-white/40'}`}>
+                                                {asset.clase.toUpperCase()}
                                             </span>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-6 bg-white/[0.02] p-3 border border-white/5">
                                             <div className="flex flex-col">
-                                                <span className="text-[8px] font-bold opacity-30 uppercase tracking-widest mb-0.5">INICIO</span>
-                                                <span className="text-[10px] font-mono font-bold opacity-60">
-                                                    {firstMeas ? new Date(firstMeas.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '---'}
+                                                <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">INICIO</span>
+                                                <span className="text-xs font-mono font-bold opacity-80">
+                                                    {firstMeas ? new Date(firstMeas.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '---'}
                                                 </span>
                                             </div>
                                             <div className="flex flex-col items-end">
-                                                <span className="text-[8px] font-bold opacity-30 uppercase tracking-widest mb-0.5">ÚLTIMO</span>
-                                                <span className="text-[10px] font-mono font-bold text-[#C68346]">
-                                                    {lastMeas ? new Date(lastMeas.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '---'}
+                                                <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1 text-[#C68346]">ÚLTIMO</span>
+                                                <span className="text-xs font-mono font-bold text-white">
+                                                    {lastMeas ? new Date(lastMeas.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '---'}
                                                 </span>
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-between items-end pt-1 border-t border-white/5">
-                                            <div className="text-lg font-black font-mono text-white/90">
-                                                {asset.last_volume_m3?.toFixed(1) || '0.0'} <span className="opacity-20 text-[10px]">m³</span>
+                                        <div className="flex justify-between items-end pt-2 border-t border-white/5">
+                                            <div className="text-2xl font-black font-mono text-white">
+                                                {asset.last_volume_m3?.toFixed(1) || '0.0'} <span className="opacity-20 text-xs font-sans">m³</span>
                                             </div>
-                                            <div className={`text-[9px] font-black uppercase tracking-tighter ${isStale ? 'text-red-500/60' : 'text-green-500/60'}`}>
+                                            <div className={`text-[10px] font-black uppercase tracking-[0.1em] px-2 py-0.5 border ${isStale ? 'text-red-500/60 border-red-500/20' : 'text-green-500/60 border-green-500/20'}`}>
                                                 {daysSince === 0 ? 'STATUS: ACTIVO' : `VENCIDO: ${daysSince}D`}
                                             </div>
                                         </div>
@@ -302,23 +302,23 @@ export const DesktopAnalytics: React.FC = () => {
                                     </div>
 
                                     {/* UPDATED TOTALS / KPIs */}
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <div className="bg-white/[0.02] border border-white/5 p-6 group hover:border-[#C68346]/20 transition-all">
-                                            <label className="text-[10px] font-black opacity-20 uppercase tracking-[0.2em] block mb-2">TOTAL_VOLUMEN</label>
-                                            <div className="text-4xl font-black font-mono text-white leading-none">
-                                                {selectedAsset.last_volume_m3?.toFixed(1) || '0.0'} <span className="text-xs opacity-20">m³</span>
+                                    <div className="grid grid-cols-3 gap-6">
+                                        <div className="bg-white/[0.02] border border-white/5 p-8 group hover:border-[#C68346]/20 transition-all">
+                                            <label className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] block mb-3">TOTAL_VOLUMEN</label>
+                                            <div className="text-5xl font-black font-mono text-white tracking-tighter leading-none">
+                                                {selectedAsset.last_volume_m3?.toFixed(1) || '0.0'} <span className="text-sm opacity-20 font-sans">m³</span>
                                             </div>
                                         </div>
-                                        <div className="bg-white/[0.02] border border-white/5 p-6 group hover:border-[#C68346]/20 transition-all">
-                                            <label className="text-[10px] font-black opacity-20 uppercase tracking-[0.2em] block mb-2">TOTAL_PESO</label>
-                                            <div className="text-4xl font-black font-mono text-white leading-none">
-                                                {selectedAsset.last_weight_t?.toFixed(0) || '0'} <span className="text-xs opacity-20">t</span>
+                                        <div className="bg-white/[0.02] border border-white/5 p-8 group hover:border-[#C68346]/20 transition-all">
+                                            <label className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] block mb-3">TOTAL_PESO</label>
+                                            <div className="text-5xl font-black font-mono text-white tracking-tighter leading-none">
+                                                {selectedAsset.last_weight_t?.toFixed(0) || '0'} <span className="text-sm opacity-20 font-sans">t</span>
                                             </div>
                                         </div>
-                                        <div className="bg-white/[0.02] border border-white/5 p-6 group hover:border-[#C68346]/20 transition-all">
-                                            <label className="text-[10px] font-black opacity-20 uppercase tracking-[0.2em] block mb-2">DENSIDAD_CALC</label>
-                                            <div className="text-4xl font-black font-mono text-[#C68346] leading-none">
-                                                {(selectedAsset.last_weight_t && selectedAsset.last_volume_m3 ? selectedAsset.last_weight_t / selectedAsset.last_volume_m3 : 0.0).toFixed(2)} <span className="text-xs opacity-20 text-white">t/m³</span>
+                                        <div className="bg-white/[0.02] border border-white/5 p-8 group hover:border-[#C68346]/20 transition-all">
+                                            <label className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] block mb-3 text-[#C68346]">DENSIDAD_CALC</label>
+                                            <div className="text-5xl font-black font-mono text-[#C68346] tracking-tighter leading-none">
+                                                {(selectedAsset.last_weight_t && selectedAsset.last_volume_m3 ? selectedAsset.last_weight_t / selectedAsset.last_volume_m3 : 0.0).toFixed(2)} <span className="text-sm opacity-20 text-white font-sans">t/m³</span>
                                             </div>
                                         </div>
                                     </div>
@@ -390,15 +390,15 @@ export const DesktopAnalytics: React.FC = () => {
                                             <div 
                                                 key={m.id} 
                                                 onClick={() => setSelectedMeasurement(m)}
-                                                className={`bg-white/[0.02] border border-white/5 p-3 flex flex-col gap-1 transition-all cursor-pointer active:scale-[0.98] ${isSelected ? 'border-[#C68346]/40 bg-[#C68346]/5' : 'hover:border-white/20'}`}
+                                                className={`bg-white/[0.02] border border-white/5 p-4 flex flex-col gap-2 transition-all cursor-pointer active:scale-[0.98] ${isSelected ? 'border-[#C68346]/40 bg-[#C68346]/5' : 'hover:border-white/20'}`}
                                             >
                                                 <div className="flex justify-between items-center">
-                                                    <div className="text-[11px] font-bold uppercase tracking-tight">{new Date(m.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</div>
-                                                    <div className="text-[14px] font-black font-mono leading-none">{m.volumen_m3.toFixed(1)} <span className="text-[9px] opacity-10">m³</span></div>
+                                                    <div className="text-[12px] font-black uppercase tracking-tight">{new Date(m.timestamp).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })}</div>
+                                                    <div className="text-base font-black font-mono leading-none text-[#C68346]">{m.volumen_m3.toFixed(1)} <span className="text-[10px] opacity-20 text-white font-sans">m³</span></div>
                                                 </div>
                                                 {diff !== 0 && (
-                                                    <div className={`text-[10px] font-bold text-right ${diff > 0 ? 'text-green-500/40' : 'text-red-500/40'}`}>
-                                                        {diff > 0 ? '+' : ''}{diff.toFixed(1)}
+                                                    <div className={`text-[11px] font-black text-right ${diff > 0 ? 'text-green-500/50' : 'text-red-500/50'}`}>
+                                                        {diff > 0 ? '▲' : '▼'} {Math.abs(diff).toFixed(1)}
                                                     </div>
                                                 )}
                                             </div>

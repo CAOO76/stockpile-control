@@ -95,46 +95,46 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                 <div className="flex flex-col bg-black">
                     
                     {/* VOLUMETRY BLOCK */}
-                    <div className="p-8 border-b border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
-                        <div className="space-y-6">
+                    <div className="p-10 border-b border-white/10 bg-gradient-to-br from-white/[0.02] to-transparent">
+                        <div className="space-y-8">
                             <div>
-                                <label className="text-[10px] font-black text-[#C68346]/40 block mb-2 tracking-[0.2em] uppercase">VOLUMEN_M3</label>
-                                <div className="text-4xl font-black font-mono tracking-tighter text-white">
-                                    {measurement.volumen_m3.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs opacity-20">m³</span>
+                                <label className="text-[12px] font-black text-[#C68346]/60 block mb-3 tracking-[0.3em] uppercase">VOLUMEN_M3</label>
+                                <div className="text-5xl font-black font-mono tracking-tighter text-white leading-none">
+                                    {measurement.volumen_m3.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-base opacity-20 font-sans tracking-normal">m³</span>
                                 </div>
                             </div>
                             <div>
-                                <label className="text-[10px] font-black text-[#C68346]/40 block mb-2 tracking-[0.2em] uppercase">PESO_TON</label>
-                                <div className="text-4xl font-black font-mono tracking-tighter text-white">
-                                    {measurement.peso_t.toLocaleString('es-CL', { maximumFractionDigits: 0 })} <span className="text-xs opacity-20">t</span>
+                                <label className="text-[12px] font-black text-[#C68346]/60 block mb-3 tracking-[0.3em] uppercase">PESO_TON</label>
+                                <div className="text-5xl font-black font-mono tracking-tighter text-white leading-none">
+                                    {measurement.peso_t.toLocaleString('es-CL', { maximumFractionDigits: 0 })} <span className="text-base opacity-20 font-sans tracking-normal">t</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* METADATA BLOCK */}
-                    <div className="p-8 grid grid-cols-2 gap-x-6 gap-y-8">
+                    <div className="p-10 grid grid-cols-2 gap-x-8 gap-y-10">
                         <div>
-                            <label className="text-[10px] font-bold opacity-20 block mb-1 tracking-[0.2em] uppercase">FECHA</label>
-                            <div className="text-xs font-black font-mono uppercase">
+                            <label className="text-[12px] font-black opacity-30 block mb-2 tracking-[0.2em] uppercase">FECHA</label>
+                            <div className="text-base font-black font-mono uppercase text-white/90">
                                 {date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold opacity-20 block mb-1 tracking-[0.2em] uppercase">HORA</label>
-                            <div className="text-xs font-black font-mono uppercase">
+                            <label className="text-[12px] font-black opacity-30 block mb-2 tracking-[0.2em] uppercase">HORA</label>
+                            <div className="text-base font-black font-mono uppercase text-white/90">
                                 {date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold opacity-20 block mb-1 tracking-[0.2em] uppercase">OPERADOR</label>
-                            <div className="text-xs font-black font-mono uppercase text-[#C68346]">
+                            <label className="text-[12px] font-black opacity-30 block mb-2 tracking-[0.2em] uppercase">OPERADOR</label>
+                            <div className="text-base font-black font-mono uppercase text-[#C68346]">
                                 @{measurement.user_id?.toUpperCase() || 'SYS_ENGINE'}
                             </div>
                         </div>
                         <div>
-                            <label className="text-[10px] font-bold opacity-20 block mb-1 tracking-[0.2em] uppercase">MÉTODO</label>
-                            <div className="text-xs font-black font-mono uppercase opacity-40">
+                            <label className="text-[12px] font-black opacity-30 block mb-2 tracking-[0.2em] uppercase">MÉTODO</label>
+                            <div className="text-sm font-black font-mono uppercase opacity-50">
                                 [{measurement.method}]
                             </div>
                         </div>
