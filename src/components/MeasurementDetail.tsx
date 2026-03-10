@@ -91,25 +91,23 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                     </div>
                 </div>
                 
-                {/* GPS COORDINATES STRIP (ESTANDARIZADO) */}
-                <div className="bg-zinc-950 border-b border-white/10 px-6 py-4 flex items-center gap-10">
+                {/* GPS COORDINATES STRIP (RE-ESTANDARIZADO - GRID) */}
+                <div className="bg-zinc-950 border-b border-white/10 px-6 py-4 grid grid-cols-3 gap-2">
                     <div className="flex flex-col">
-                        <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">LATITUD</span>
-                        <span className="text-[14px] font-bold font-mono text-white/90 tabular-nums">
+                        <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.1em] leading-none mb-1.5">LATITUD</span>
+                        <span className="text-[13px] font-bold font-mono text-white/90 tabular-nums truncate">
                             {measurement.location_metadata?.lat.toFixed(6) || '0.000000'}
                         </span>
                     </div>
-                    <div className="w-px h-8 bg-white/10"></div>
                     <div className="flex flex-col">
-                        <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">LONGITUD</span>
-                        <span className="text-[14px] font-bold font-mono text-white/90 tabular-nums">
+                        <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.1em] leading-none mb-1.5">LONGITUD</span>
+                        <span className="text-[13px] font-bold font-mono text-white/90 tabular-nums truncate">
                             {measurement.location_metadata?.lng.toFixed(6) || '0.000000'}
                         </span>
                     </div>
-                    <div className="w-px h-8 bg-white/10"></div>
-                    <div className="flex flex-col">
-                        <span className="text-[11px] font-black opacity-30 uppercase tracking-[0.2em] leading-none mb-2">PRECISIÓN_H</span>
-                        <span className="text-[14px] font-bold font-mono text-[#C68346] tabular-nums">
+                    <div className="flex flex-col text-right">
+                        <span className="text-[10px] font-black opacity-30 uppercase tracking-[0.1em] leading-none mb-1.5">PRECISIÓN_H</span>
+                        <span className="text-[13px] font-bold font-mono text-[#C68346] tabular-nums truncate">
                             ±{measurement.location_metadata?.accuracy.toFixed(1)}M
                         </span>
                     </div>

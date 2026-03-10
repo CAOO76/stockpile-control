@@ -326,23 +326,21 @@ export const DesktopAnalytics: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {/* GPS TRACEABILITY STRIP (ESTANDARIZADO) */}
-                                    <div className="bg-white/[0.02] border border-white/5 px-8 py-4 mb-6 flex items-center gap-12">
+                                    {/* GPS TRACEABILITY STRIP (ESTANDARIZADO - GRID) */}
+                                    <div className="bg-white/[0.02] border border-white/5 px-8 py-5 mb-6 grid grid-cols-3 gap-8">
                                         <div className="flex flex-col">
                                             <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2 text-[#C68346]">LATITUD</span>
                                             <span className="text-[18px] font-bold font-mono text-white/90 tabular-nums">
                                                 {selectedAsset.geo_point?.latitude.toFixed(6) || '0.000000'}
                                             </span>
                                         </div>
-                                        <div className="w-px h-10 bg-white/10"></div>
                                         <div className="flex flex-col">
                                             <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2 text-[#C68346]">LONGITUD</span>
                                             <span className="text-[18px] font-bold font-mono text-white/90 tabular-nums">
                                                 {selectedAsset.geo_point?.longitude.toFixed(6) || '0.000000'}
                                             </span>
                                         </div>
-                                        <div className="w-px h-10 bg-white/10"></div>
-                                        <div className="flex flex-col">
+                                        <div className="flex flex-col text-right">
                                             <span className="text-[12px] font-black opacity-30 uppercase tracking-[0.3em] leading-none mb-2 text-[#C68346]">PRECISIÓN_H</span>
                                             <span className="text-[18px] font-bold font-mono text-[#C68346] tabular-nums">
                                                 ±{(currentMeasurement?.location_metadata?.accuracy || 0).toFixed(1)}M
