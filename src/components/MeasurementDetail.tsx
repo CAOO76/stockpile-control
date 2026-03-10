@@ -1,18 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { StockpileMeasurement } from '../types/StockpileAsset';
+import { dataService } from '../services/DataService';
 
 interface MeasurementDetailProps {
-    measurement: StockpileMeasurement;
-    onClose: () => void;
+    measurement?: StockpileMeasurement;
+    measurementId?: string;
+    onClose?: () => void;
+    onBack?: () => void;
 }
 
 /**
  * MeasurementDetail - DOSSIER TÉCNICO DE TRAZABILIDAD
  * Estándar: Elite Industrial Minimalism (Blueprint Mode)
- * Componente inline para la columna de trazabilidad.
+ * Soporta carga directa via objeto (Desktop) o diferida via ID (Mobile).
  */
-export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measurement, onClose }) => {
+export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measurement: initialMeasurement, measurementId, onClose, onBack }) => {
+    const [measurement, setMeasurement] = useState<StockpileMeasurement | null>(initialMeasurement || null);
+    const [loading, setLoading] = useState(!initialMeasurement && !!measurementId);
+    
     const apiKey = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY;
+    const handleClose = onClose || onBack;
+
+    useEffect(() => {
+        if (!initialMeasurement && measurementId) {
+            setLoading(true);
+            dataService.getMeasurement(measurementId).then(m => {
+                setMeasurement(m);
+                setLoading(false);
+            });
+        }
+    }, [measurementId, initialMeasurement]);
+
+    if (loading) {
+        return (
+            <div className="flex-1 bg-black flex items-center justify-center">
+                <div className="text-[10px] font-black opacity-20 uppercase animate-pulse">CARGANDO_DOSSIER...</div>
+            </div>
+        );
+    }
+
+    if (!measurement) return null;
+
     const date = new Date(measurement.timestamp);
 
     return (
@@ -26,7 +54,7 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                     </span>
                 </div>
                 <button 
-                    onClick={onClose}
+                    onClick={handleClose}
                     className="h-14 w-14 border-l border-white/10 flex items-center justify-center hover:bg-white/5 transition-colors group"
                 >
                     <span className="material-symbols-outlined text-xl opacity-20 group-hover:opacity-100">close</span>
