@@ -14,11 +14,11 @@ interface MobileHomeProps {
  */
 export const MobileHome: React.FC<MobileHomeProps> = ({ onStartNewScan, onViewRecords }) => {
     return (
-        <main className="h-screen w-screen bg-black flex flex-col font-atkinson text-white overflow-hidden select-none">
+        <main className="h-screen w-screen bg-antigravity-light-bg dark:bg-antigravity-dark-bg flex flex-col font-atkinson text-antigravity-light-text dark:text-antigravity-dark-text overflow-hidden select-none transition-colors duration-200">
             {/* Header Branding - Static for stability */}
             <header className="relative z-10 pt-16 pb-8 landscape:pt-8 landscape:pb-4 flex flex-col items-center">
-                <span className="material-symbols-outlined text-primary text-6xl mb-2 landscape:text-4xl transition-all">landscape</span>
-                <h1 className="text-xs font-bold tracking-[0.5em] uppercase text-white/90 landscape:text-[10px]">STOCKPILE-CONTROL</h1>
+                <span className="material-symbols-outlined text-antigravity-accent text-6xl mb-2 landscape:text-4xl transition-all">landscape</span>
+                <h1 className="text-xs font-bold tracking-[0.5em] uppercase text-antigravity-light-text/90 dark:text-antigravity-dark-text/90 landscape:text-[10px]">STOCKPILE-CONTROL</h1>
             </header>
 
             {/* Ergonomic Action Zone (Industrial Standards: 96px targets) */}
@@ -30,10 +30,10 @@ export const MobileHome: React.FC<MobileHomeProps> = ({ onStartNewScan, onViewRe
                     className="flex flex-col items-center space-y-4 active:scale-90 transition-all group"
                     aria-label="Ver registros de stock"
                 >
-                    <div className="w-32 h-32 landscape:w-28 landscape:h-28 flex items-center justify-center rounded-none bg-white/5 border-2 border-white/10 group-active:bg-white/10 group-active:border-white transition-colors overflow-hidden">
-                        <span className="material-symbols-outlined text-[64px] landscape:text-[56px] text-white/40 group-active:text-white transition-all">list_alt</span>
+                    <div className="w-32 h-32 landscape:w-28 landscape:h-28 flex items-center justify-center rounded-none bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-2 border-antigravity-light-border dark:border-antigravity-dark-border group-active:border-antigravity-accent transition-colors overflow-hidden">
+                        <span className="material-symbols-outlined text-[64px] landscape:text-[56px] text-antigravity-light-text/40 dark:text-antigravity-dark-text/40 group-active:text-antigravity-accent transition-all">list_alt</span>
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-[0.3em] text-white/30 group-active:text-white">Stock</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.3em] text-antigravity-light-text/50 dark:text-antigravity-dark-text/30 group-active:text-antigravity-accent">Stock</span>
                 </button>
 
                 {/* Primary: NUEVO REGISTRO (Now Second) */}
@@ -42,10 +42,10 @@ export const MobileHome: React.FC<MobileHomeProps> = ({ onStartNewScan, onViewRe
                     className="flex flex-col items-center space-y-4 active:scale-90 transition-all group"
                     aria-label="Iniciar nuevo registro de acopio"
                 >
-                    <div className="w-32 h-32 landscape:w-28 landscape:h-28 flex items-center justify-center rounded-none bg-primary/5 border-2 border-primary/20 group-active:bg-primary/20 group-active:border-primary transition-colors overflow-hidden">
-                        <span className="material-symbols-outlined text-[64px] landscape:text-[56px] font-bold text-primary transition-all">list_alt_add</span>
+                    <div className="w-32 h-32 landscape:w-28 landscape:h-28 flex items-center justify-center rounded-none bg-antigravity-accent/5 dark:bg-antigravity-accent/10 border-2 border-antigravity-accent/20 dark:border-antigravity-accent/40 group-active:bg-antigravity-accent/20 group-active:border-antigravity-accent transition-colors overflow-hidden">
+                        <span className="material-symbols-outlined text-[64px] landscape:text-[56px] font-bold text-antigravity-accent transition-all">list_alt_add</span>
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-[0.3em] text-primary group-active:text-white">Nuevo Registro</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.3em] text-antigravity-accent group-active:text-antigravity-accent/80">Nuevo Registro</span>
                 </button>
 
             </section>
@@ -53,9 +53,9 @@ export const MobileHome: React.FC<MobileHomeProps> = ({ onStartNewScan, onViewRe
             {/* Industrial Version Footer */}
             <footer className="relative z-10 pb-8 flex justify-center items-center">
                 <div className="flex items-center space-x-4">
-                    <div className="h-[1px] w-8 bg-white/5"></div>
-                    <span className="text-[10px] text-white/10 font-bold uppercase tracking-[0.6em]">FIELD_V2.0_PRO</span>
-                    <div className="h-[1px] w-8 bg-white/5"></div>
+                    <div className="h-[1px] w-8 bg-antigravity-light-border dark:bg-antigravity-dark-border opacity-60 dark:opacity-30"></div>
+                    <span className="text-[10px] text-antigravity-light-text/30 dark:text-antigravity-dark-text/10 font-bold uppercase tracking-[0.6em]">FIELD_V2.0_PRO</span>
+                    <div className="h-[1px] w-8 bg-antigravity-light-border dark:bg-antigravity-dark-border opacity-60 dark:opacity-30"></div>
                 </div>
             </footer>
         </main>

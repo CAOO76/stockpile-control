@@ -12,55 +12,49 @@
  *  - "sc_meas_ids_{assetId}"   → string[] de IDs de mediciones de un activo
  */
 
+import { idbStorage } from '../utils/indexedDB';
+
 const PREFIX = 'sc_';
 
 function lsKey(key: string): string {
     return `${PREFIX}${key}`;
 }
 
+/**
+ * LocalDB - Capa de persistencia asíncrona usando IndexedDB
+ */
 export const localDb = {
-    set<T>(key: string, value: T): void {
+    async set<T>(key: string, value: T): Promise<void> {
         try {
-            localStorage.setItem(lsKey(key), JSON.stringify(value));
+            await idbStorage.set(lsKey(key), value);
         } catch (e) {
             console.error('[LocalDB] Error al guardar:', key, e);
         }
     },
 
-    get<T>(key: string): T | null {
+    async get<T>(key: string): Promise<T | null> {
         try {
-            const raw = localStorage.getItem(lsKey(key));
-            return raw ? (JSON.parse(raw) as T) : null;
+            return await idbStorage.get<T>(lsKey(key));
         } catch (e) {
             console.error('[LocalDB] Error al leer:', key, e);
             return null;
         }
     },
 
-    delete(key: string): void {
-        localStorage.removeItem(lsKey(key));
+    async delete(key: string): Promise<void> {
+        await idbStorage.delete(lsKey(key));
     },
 
-    keys(): string[] {
-        const result: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith(PREFIX)) {
-                result.push(k.slice(PREFIX.length));
-            }
-        }
-        return result;
-    },
-
-    addToList(listKey: string, id: string): void {
-        const current = this.get<string[]>(listKey) || [];
+    async addToList(listKey: string, id: string): Promise<void> {
+        let current = await this.get<any>(listKey);
+        if (!Array.isArray(current)) current = [];
         if (!current.includes(id)) {
             current.push(id);
-            this.set(listKey, current);
+            await this.set(listKey, current);
         }
     },
 
-    getList(listKey: string): string[] {
-        return this.get<string[]>(listKey) || [];
+    async getList(listKey: string): Promise<string[]> {
+        return await this.get<string[]>(listKey) || [];
     }
 };

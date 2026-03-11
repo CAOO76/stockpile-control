@@ -17,12 +17,13 @@ for (const name of Object.keys(nets)) {
     if (ip !== 'localhost') break;
 }
 
-const envPath = join(process.cwd(), '.env.local');
 const envContent = `VITE_DEV_MAC_IP=http://${ip}:5190\n`;
 
 try {
-    writeFileSync(envPath, envContent);
+    // Write to both just in case
+    writeFileSync(join(process.cwd(), '.env.local'), envContent);
+    writeFileSync(join(process.cwd(), '.env.android.local'), envContent);
     console.log(`[Dev Setup] ✅ Injected Mac IP for Offline Build: ${ip}`);
 } catch (e) {
-    console.error(`[Dev Setup] ❌ Failed to write .env.local:`, e);
+    console.error(`[Dev Setup] ❌ Failed to write env files:`, e);
 }

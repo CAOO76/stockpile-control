@@ -4,6 +4,7 @@ import { dataService } from '../services/DataService';
 import { storageService } from '../services/StorageService';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { compressImage } from '../utils/imageOptimizer';
 import type { GeometryType } from './GeometrySelection';
 
 interface ManualCaptureProps {
@@ -11,6 +12,7 @@ interface ManualCaptureProps {
     initialGeometry: GeometryType;
     onSuccess: (measurementId: string) => void;
     onBack: () => void;
+    hidePhoto?: boolean; // true cuando viene del wizard (usa foto del activo)
 }
 
 const GEOMETRY_NAMES: Record<string, string> = {
@@ -24,7 +26,7 @@ const GEOMETRY_NAMES: Record<string, string> = {
  * Solución: Sin footer fijo para evitar solapamientos. 
  * Inputs masivos y limpios para máxima compatibilidad táctil.
  */
-export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGeometry, onSuccess, onBack }) => {
+export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGeometry, onSuccess, onBack, hidePhoto = false }) => {
     const [geometria] = useState<GeometryType>(initialGeometry);
     const [dimensions, setDimensions] = useState({ a: '', b: '', h: '', ap: '', bp: '', p: '', pp: '' });
     const [density, setDensity] = useState('');
@@ -53,7 +55,10 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                 correctOrientation: true,
                 saveToGallery: false
             });
-            if (image.dataUrl) setPhoto(image.dataUrl);
+            if (image.dataUrl) {
+                const optimized = await compressImage(image.dataUrl, 1024, 0.7);
+                setPhoto(optimized);
+            }
         } catch (err) { console.warn('[ManualCapture] Camera Canceled'); }
     };
 
@@ -78,29 +83,25 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
     }, [dimensions, geometria]);
 
     const handleSave = async () => {
-        if (isSaving || liveEstimation <= 0 || !photo) {
-            if (!photo) alert('Capturar foto de evidencia es obligatorio');
+        if (isSaving || liveEstimation <= 0) return;
+        if (!hidePhoto && !photo) {
+            alert('Capturar foto de evidencia es obligatorio');
             return;
         }
         setIsSaving(true);
         try {
-            console.log('[ManualCapture] Optimizing and uploading photo evidence...');
-
-            // 1. Convert DataURL to Blob
-            const response = await fetch(photo);
-            const blob = await response.blob();
-
-            // 2. Upload to Cloud Storage
-            const uploadResult = await storageService.uploadStockpileImage(blob, assetId, {
-                quality: 0.8,
-                format: 'jpeg',
-                maxWidth: 1600 // Slightly smaller for performance
-            });
+            // 1. Subir foto de evidencia (solo si se capturó)
+            let photoUrl = '';
+            if (photo) {
+                const response = await fetch(photo);
+                const blob = await response.blob();
+                const uploadResult = await storageService.uploadStockpileImage(blob, assetId);
+                photoUrl = uploadResult.url;
+            }
 
             const densityNum = parseFloat(density) || 0;
             const weight = calculationEngine.computeTotalMass(liveEstimation, densityNum);
 
-            // 3. Save to Firestore using the URL from Storage
             const measurementId = await dataService.addMeasurement({
                 assetId,
                 timestamp: Date.now(),
@@ -108,7 +109,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                 peso_t: weight,
                 density_factor: densityNum || undefined,
                 method: 'manual',
-                photo_url: uploadResult.url,
+                photo_url: photoUrl,
                 geometry: {
                     type: geometria,
                     dimensions: {
@@ -138,17 +139,17 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
     };
 
     return (
-        <div className="h-screen w-screen bg-black flex flex-col font-atkinson text-white overflow-hidden relative">
+        <div className="h-screen w-screen bg-antigravity-light-bg dark:bg-antigravity-dark-bg flex flex-col font-atkinson text-antigravity-light-text dark:text-antigravity-dark-text overflow-hidden relative transition-colors duration-200">
 
             {/* Header Técnico (Fijo) */}
-            <header className="flex-none pt-14 pb-4 px-6 flex items-center justify-between bg-black z-50">
+            <header className="flex-none pt-14 pb-4 px-6 flex items-center justify-between bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-b border-antigravity-light-border dark:border-antigravity-dark-border z-50">
                 <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
-                        <span className="material-symbols-outlined text-3xl text-primary font-bold">arrow_back</span>
+                    <button onClick={onBack} className="w-12 h-12 rounded-none bg-antigravity-light-surface dark:bg-antigravity-dark-surface border border-antigravity-light-border dark:border-antigravity-dark-border flex items-center justify-center active:scale-95 transition-transform">
+                        <span className="material-symbols-outlined text-3xl text-antigravity-accent font-bold">arrow_back</span>
                     </button>
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-white/20">MEDICIÓN</span>
-                        <span className="text-xl font-black tracking-tight text-white/90 uppercase">
+                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-antigravity-light-text/40 dark:text-antigravity-dark-text/20">MEDICIÓN</span>
+                        <span className="text-xl font-black tracking-tight text-antigravity-light-text dark:text-antigravity-dark-text/90 uppercase">
                             {GEOMETRY_NAMES[geometria] || geometria.replace(/_/g, ' ')}
                         </span>
                     </div>
@@ -159,27 +160,28 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
             {/* Area de Trabajo (Scrollable) */}
             <main className="flex-1 overflow-y-auto px-6 py-8 relative">
                 {/* Background Grid sutil */}
-                <div className="absolute inset-0 opacity-[0.02] pointer-events-none"
-                    style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
+                <div className="absolute inset-0 opacity-[0.05] dark:opacity-[0.02] pointer-events-none"
+                    style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
                 </div>
 
                 <div className="max-w-sm mx-auto space-y-12 relative z-10">
 
-                    {/* Captura de Evidencia Fotográfica */}
+                    {/* Captura de Evidencia Fotográfica — solo si no viene del wizard */}
+                    {!hidePhoto && (
                     <div className="space-y-4">
-                        <span className="text-[10px] font-black tracking-[0.4em] text-white/20 uppercase">EVIDENCIA TÉCNICA</span>
+                        <span className="text-[10px] font-black tracking-[0.4em] text-antigravity-light-text/40 dark:text-antigravity-dark-text/20 uppercase">EVIDENCIA TÉCNICA</span>
                         <div
                             onClick={takePhoto}
                             className={`relative w-full aspect-video rounded-none border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center
-                                ${photo ? 'border-primary/40 bg-black' : 'border-white/10 bg-white/5 active:bg-white/10'}`}
+                                ${photo ? 'border-antigravity-accent/40 bg-black' : 'border-antigravity-light-border dark:border-antigravity-dark-border bg-antigravity-light-surface dark:bg-antigravity-dark-surface active:bg-antigravity-accent/5'}`}
                         >
                             {photo ? (
                                 <>
                                     <img src={photo} className="w-full h-full object-cover" alt="Evidencia" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                     <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-primary text-xl">check_circle</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest">CAPTURA OK</span>
+                                        <span className="material-symbols-outlined text-antigravity-accent text-xl">check_circle</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">CAPTURA OK</span>
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
@@ -196,6 +198,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                             )}
                         </div>
                     </div>
+                    )}
 
                     {/* Formulario de Medidas */}
                     <div className="grid grid-cols-1 gap-10">
@@ -224,13 +227,13 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                     </div>
 
                     {/* Dashboard de Resultados en Vivo */}
-                    <div className="bg-[#111] border border-white/5 rounded-none p-8 flex flex-col items-center gap-2">
-                        <span className="text-[11px] font-black text-white/30 tracking-[0.4em] uppercase">VOLUMEN ESTIMADO</span>
+                    <div className="bg-antigravity-light-surface dark:bg-antigravity-dark-surface border border-antigravity-light-border dark:border-antigravity-dark-border rounded-none p-8 flex flex-col items-center gap-2 transition-colors">
+                        <span className="text-[11px] font-black text-antigravity-light-text/30 dark:text-antigravity-dark-text/30 tracking-[0.4em] uppercase">VOLUMEN ESTIMADO</span>
                         <div className="flex items-baseline gap-3">
-                            <span className="text-6xl font-black text-primary tracking-tighter">
+                            <span className="text-6xl font-black text-antigravity-accent tracking-tighter">
                                 {liveEstimation.toFixed(1)}
                             </span>
-                            <span className="text-lg font-black text-primary/40 uppercase">m³</span>
+                            <span className="text-lg font-black text-antigravity-accent/40 uppercase">m³</span>
                         </div>
                     </div>
 
@@ -241,8 +244,8 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                             disabled={isSaving || liveEstimation <= 0}
                             className={`w-full max-w-xs h-20 rounded-none flex items-center justify-center gap-4 transition-all
                                 ${isSaving || liveEstimation <= 0
-                                    ? 'bg-white/5 text-white/20'
-                                    : 'bg-primary text-black font-black shadow-[0_0_30px_rgba(198,131,70,0.1)] active:scale-95'
+                                    ? 'bg-antigravity-light-border/20 dark:bg-antigravity-dark-border/20 text-antigravity-light-text/20 dark:text-antigravity-dark-text/20'
+                                    : 'bg-antigravity-accent text-white dark:text-black font-black shadow-[0_0_30px_rgba(198,131,70,0.1)] active:scale-95'
                                 }`}
                         >
                             {isSaving ? (
@@ -265,7 +268,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
 /* Sub-componente de Campo Industrial */
 const Field: React.FC<{ label: string, value: string, onChange: (v: string) => void }> = ({ label, value, onChange }) => (
     <div className="flex flex-col gap-3 group">
-        <label className="text-[10px] font-black text-white/30 tracking-widest pl-1 uppercase group-focus-within:text-primary transition-colors">
+        <label className="text-[10px] font-black text-antigravity-light-text/30 dark:text-antigravity-dark-text/30 tracking-widest pl-1 uppercase group-focus-within:text-antigravity-accent transition-colors">
             {label}
         </label>
         <div className="relative">
@@ -277,7 +280,7 @@ const Field: React.FC<{ label: string, value: string, onChange: (v: string) => v
                     const val = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
                     onChange(val);
                 }}
-                className="w-full !bg-[#1a1a1a] border-2 border-white/10 rounded-none h-16 px-6 text-3xl font-black !text-white outline-none focus:border-primary transition-all text-center tracking-tight"
+                className="w-full bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-2 border-[#9ca3af] dark:border-antigravity-dark-border rounded-none h-16 px-6 text-3xl font-black text-antigravity-light-text dark:text-antigravity-dark-text outline-none focus:border-antigravity-accent transition-all text-center tracking-tight"
                 placeholder=" "
                 autoComplete="off"
             />

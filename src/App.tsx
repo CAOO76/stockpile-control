@@ -15,6 +15,8 @@ import { StockList } from './components/StockList';
 import { MeasurementDetail } from './components/MeasurementDetail';
 import { GeometrySelection } from './components/GeometrySelection';
 import type { GeometryType } from './components/GeometrySelection';
+import { ThemeToggle } from './components/ThemeToggle';
+import { SyncIndicator } from './components/SyncIndicator';
 
 
 export type ViewState =
@@ -80,6 +82,7 @@ function App() {
   if (isNative) {
     return (
       <div className="relative h-screen w-screen overflow-hidden bg-black">
+        <ThemeToggle />
         <AnimatePresence mode="wait">
           {view === 'home' && (
             <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
@@ -185,6 +188,8 @@ function App() {
             </motion.div>
           )}
         </AnimatePresence>
+        <ThemeToggle />
+        <SyncIndicator />
       </div>
     );
   }
@@ -196,6 +201,8 @@ function App() {
       setView={setView as any}
       hasActiveStockpile={!!selectedAssetId}
     >
+      <ThemeToggle />
+      <SyncIndicator />
       <DesktopAnalytics />
     </MainLayout>
   );

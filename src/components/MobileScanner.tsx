@@ -4,6 +4,7 @@ import { Motion } from '@capacitor/motion';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { dataService } from '../services/DataService';
 import { storageService } from '../services/StorageService';
+import { compressImage } from '../utils/imageOptimizer';
 
 // @ts-ignore - MinReport SDK global
 declare const MinReport: any;
@@ -117,8 +118,9 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                 saveToGallery: false
             });
             if (image.dataUrl) {
-                setPhoto(image.dataUrl);
-                console.log('[Scanner] Foto de referencia capturada');
+                const optimized = await compressImage(image.dataUrl, 1024, 0.7);
+                setPhoto(optimized);
+                console.log('[Scanner] Foto de referencia capturada y optimizada');
             }
         } catch (err) {
             console.warn('[Scanner] Captura cancelada:', err);
@@ -145,13 +147,14 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                 saveToGallery: false
             });
             if (image.dataUrl) {
+                const optimized = await compressImage(image.dataUrl, 800, 0.6); // Mas agresivo para escaneo multi-foto
                 // Guardar foto con datos IMU del momento
                 const newPhoto = {
-                    dataUrl: image.dataUrl,
+                    dataUrl: optimized,
                     imu: { ...imuData }
                 };
                 setScanPhotos(prev => [...prev, newPhoto]);
-                console.log('[Scanner] Foto de escaneo capturada:', scanPhotos.length + 1, '/', targetPhotoCount);
+                console.log('[Scanner] Foto de escaneo capturada y optimizada:', scanPhotos.length + 1, '/', targetPhotoCount);
             }
         } catch (err) {
             console.warn('[Scanner] Captura cancelada:', err);
@@ -252,14 +255,9 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                     const blob = await response.blob();
 
                     // Race con timeout de 4 segundos para determinar si estamos "offline"
-                    const uploadPromise = storageService.uploadStockpileImage(blob, assetId, {
-                        quality: 0.8,
-                        format: 'jpeg',
-                        maxWidth: 1600
-                    });
-
+                    // Usamos la imagen ya optimizada del estado
                     const result: any = await Promise.race([
-                        uploadPromise,
+                        storageService.uploadStockpileImage(blob, assetId),
                         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout de red')), 4000))
                     ]);
 
@@ -340,46 +338,46 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
     };
 
     return (
-        <div className="h-screen w-screen bg-black flex flex-col font-atkinson text-white overflow-hidden relative">
+        <div className="h-screen w-screen bg-antigravity-light-bg dark:bg-antigravity-dark-bg flex flex-col font-atkinson text-antigravity-light-text dark:text-antigravity-dark-text overflow-hidden relative transition-colors duration-200">
 
             {/* Header Técnico (Fijo) */}
-            <header className="flex-none pt-14 pb-4 px-6 flex items-center justify-between bg-black z-50">
+            <header className="flex-none pt-14 pb-4 px-6 flex items-center justify-between bg-antigravity-light-bg dark:bg-black z-50">
                 <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="w-12 h-12 rounded-none bg-white/5 border border-white/10 flex items-center justify-center active:scale-95 transition-transform">
-                        <span className="material-symbols-outlined text-3xl text-primary font-bold">arrow_back</span>
+                    <button onClick={onBack} className="w-12 h-12 rounded-none bg-antigravity-light-surface dark:bg-white/5 border border-antigravity-light-border dark:border-white/10 flex items-center justify-center active:scale-95 transition-transform">
+                        <span className="material-symbols-outlined text-3xl text-antigravity-accent font-bold">arrow_back</span>
                     </button>
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-white/20">MEDICIÓN</span>
-                        <span className="text-xl font-black tracking-tight text-white/90 uppercase">DIGITAL (IA)</span>
+                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-antigravity-light-text/50 dark:text-white/20">MEDICIÓN</span>
+                        <span className="text-xl font-black tracking-tight text-antigravity-light-text dark:text-white/90 uppercase">DIGITAL (IA)</span>
                     </div>
                 </div>
-                <span className="material-symbols-outlined text-3xl opacity-20">landscape</span>
+                <span className="material-symbols-outlined text-3xl opacity-30 dark:opacity-20">landscape</span>
             </header>
 
             {/* Área de Trabajo (Scrollable) */}
             <main className="flex-1 overflow-y-auto px-6 py-8 relative">
                 {/* Background Grid sutil */}
-                <div className="absolute inset-0 opacity-[0.02] pointer-events-none"
-                    style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
+                <div className="absolute inset-0 opacity-[0.05] dark:opacity-[0.02] pointer-events-none"
+                    style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
                 </div>
 
                 <div className="max-w-sm mx-auto space-y-12 relative z-10">
 
                     {/* 1. FOTO DE REFERENCIA DEL LUGAR (Obligatoria) */}
                     <div className="space-y-4">
-                        <span className="text-[10px] font-black tracking-[0.4em] text-white/20 uppercase">EVIDENCIA TÉCNICA</span>
+                        <span className="text-[10px] font-black tracking-[0.4em] text-antigravity-light-text/50 dark:text-white/20 uppercase">EVIDENCIA TÉCNICA</span>
                         <div
                             onClick={photo ? undefined : captureReferencePhoto}
                             className={`relative w-full aspect-video rounded-none border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center
-                                    ${photo ? 'border-primary/40 bg-black' : 'border-white/10 bg-white/5 active:bg-white/10'}`}
+                                    ${photo ? 'border-antigravity-accent/40 bg-black' : 'border-antigravity-light-border dark:border-white/10 bg-antigravity-light-surface dark:bg-white/5 active:bg-antigravity-light-surface/80 dark:active:bg-white/10'}`}
                         >
                             {photo ? (
                                 <>
                                     <img src={photo} className="w-full h-full object-cover" alt="Evidencia" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                     <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-primary text-xl">check_circle</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest">CAPTURA OK</span>
+                                        <span className="material-symbols-outlined text-antigravity-accent text-xl">check_circle</span>
+                                        <span className="text-[10px] font-black text-white uppercase tracking-widest">CAPTURA OK</span>
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
@@ -390,8 +388,8 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                 </>
                             ) : (
                                 <>
-                                    <span className="material-symbols-outlined text-5xl text-white/10 mb-2 font-light">add_a_photo</span>
-                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">TOUCH PARA CAPTURAR</span>
+                                    <span className="material-symbols-outlined text-5xl text-antigravity-light-text/20 dark:text-white/10 mb-2 font-light">add_a_photo</span>
+                                    <span className="text-[10px] font-black text-antigravity-light-text/30 dark:text-white/20 uppercase tracking-[0.2em]">TOUCH PARA CAPTURAR</span>
                                 </>
                             )}
                         </div>
@@ -400,29 +398,29 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                     {/* 2. ESCANEO MULTI-FOTO */}
                     {photo && !scanComplete && (
                         <div className="space-y-4">
-                            <span className="text-[10px] font-black tracking-[0.4em] text-white/20 uppercase">ESCANEO TÉCNICO</span>
+                            <span className="text-[10px] font-black tracking-[0.4em] text-antigravity-light-text/50 dark:text-white/20 uppercase">ESCANEO TÉCNICO</span>
 
                             {/* Indicador de progreso */}
-                            <div className="bg-[#111] border border-white/5 rounded-none p-6">
+                            <div className="bg-antigravity-light-surface dark:bg-[#111] border border-antigravity-light-border dark:border-white/5 rounded-none p-6 shadow-sm">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-3">
-                                        <span className="material-symbols-outlined text-2xl text-white/40">photo_library</span>
+                                        <span className="material-symbols-outlined text-2xl text-antigravity-light-text/40 dark:text-white/40">photo_library</span>
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-black text-white/60">PROGRESO DEL ESCANEO</span>
-                                            <span className={`text-[9px] font-black uppercase ${scanPhotos.length >= targetPhotoCount ? 'text-primary' : 'text-white/30'}`}>
+                                            <span className="text-xs font-black text-antigravity-light-text/70 dark:text-white/60">PROGRESO DEL ESCANEO</span>
+                                            <span className={`text-[9px] font-black uppercase ${scanPhotos.length >= targetPhotoCount ? 'text-antigravity-accent dark:text-primary' : 'text-antigravity-light-text/30 dark:text-white/30'}`}>
                                                 {scanPhotos.length} / {targetPhotoCount} FOTOS
                                             </span>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-xs font-mono text-white/40">{imuData.beta.toFixed(1)}°</span>
+                                        <span className="text-xs font-mono text-antigravity-light-text/40 dark:text-white/40">{imuData.beta.toFixed(1)}°</span>
                                     </div>
                                 </div>
 
                                 {/* Barra de progreso */}
-                                <div className="w-full h-2 bg-white/5 rounded-none overflow-hidden">
+                                <div className="w-full h-2 bg-antigravity-light-border dark:bg-white/5 rounded-none overflow-hidden">
                                     <div
-                                        className="h-full bg-primary transition-all duration-300"
+                                        className="h-full bg-antigravity-accent dark:bg-primary transition-all duration-300"
                                         style={{ width: `${(scanPhotos.length / targetPhotoCount) * 100}%` }}
                                     />
                                 </div>
@@ -430,8 +428,8 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
 
                             {/* Instrucciones */}
                             {!isScanning && scanPhotos.length === 0 && (
-                                <div className="bg-primary/5 border border-primary/20 rounded-none p-4">
-                                    <p className="text-[10px] text-primary/60 leading-relaxed">
+                                <div className="bg-antigravity-accent/5 dark:bg-primary/5 border border-antigravity-accent/20 dark:border-primary/20 rounded-none p-4">
+                                    <p className="text-[10px] text-antigravity-accent dark:text-primary/60 leading-relaxed">
                                         <span className="font-black">INSTRUCCIONES:</span> Captura {targetPhotoCount} fotos del acopio desde diferentes ángulos y posiciones. Muévete alrededor del acopio para obtener una cobertura completa.
                                     </p>
                                 </div>
@@ -441,7 +439,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                             {!isScanning ? (
                                 <button
                                     onClick={startScan}
-                                    className="w-full h-20 rounded-none bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95 transition-all flex items-center justify-center gap-4"
+                                    className="w-full h-20 rounded-none bg-antigravity-accent text-white dark:text-black font-black shadow-[0_0_30px_rgba(198,131,70,0.1)] dark:shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95 transition-all flex items-center justify-center gap-4"
                                 >
                                     <span className="material-symbols-outlined text-4xl">shutter_speed</span>
                                     <span className="text-lg tracking-tight">INICIAR ESCANEO</span>
@@ -450,7 +448,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                 <div className="space-y-3">
                                     <button
                                         onClick={captureScanPhoto}
-                                        className="w-full h-20 rounded-none bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95 transition-all flex items-center justify-center gap-4"
+                                        className="w-full h-20 rounded-none bg-antigravity-accent text-white dark:text-black font-black shadow-[0_0_30px_rgba(198,131,70,0.1)] dark:shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95 transition-all flex items-center justify-center gap-4"
                                     >
                                         <span className="material-symbols-outlined text-4xl">photo_camera</span>
                                         <span className="text-lg tracking-tight">CAPTURAR FOTO {scanPhotos.length + 1}</span>
@@ -474,17 +472,17 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                     {scanComplete && (
                         <div className="space-y-10">
                             {/* Confirmación de escaneo */}
-                            <div className="bg-primary/10 border border-primary/30 rounded-none p-4 flex items-center gap-3">
-                                <span className="material-symbols-outlined text-3xl text-primary">check_circle</span>
+                            <div className="bg-green-100 dark:bg-primary/10 border border-green-200 dark:border-primary/30 rounded-none p-4 flex items-center gap-3">
+                                <span className="material-symbols-outlined text-3xl text-green-600 dark:text-primary">check_circle</span>
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-black text-primary">ESCANEO COMPLETADO</span>
-                                    <span className="text-[9px] text-primary/60">{scanPhotos.length} fotos capturadas con datos IMU</span>
+                                    <span className="text-sm font-black text-green-700 dark:text-primary">ESCANEO COMPLETADO</span>
+                                    <span className="text-[9px] text-green-600/60 dark:text-primary/60">{scanPhotos.length} fotos capturadas con datos IMU</span>
                                 </div>
                             </div>
 
                             {/* Clasificación */}
                             <div className="flex flex-col gap-3">
-                                <label className="text-[10px] font-black text-white/30 tracking-widest pl-1 uppercase">
+                                <label className="text-[10px] font-black text-antigravity-light-text/50 dark:text-white/30 tracking-widest pl-1 uppercase">
                                     CLASIFICACIÓN DEL MATERIAL
                                 </label>
                                 <div className="grid grid-cols-3 gap-3">
@@ -493,8 +491,8 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                             key={c}
                                             onClick={() => setClassification(c)}
                                             className={`h-16 rounded-none font-black text-sm transition-all border-2 ${classification === c
-                                                ? 'bg-primary text-black border-primary'
-                                                : 'bg-white/5 text-white/40 border-white/10'
+                                                ? 'bg-antigravity-accent text-white border-antigravity-accent dark:bg-primary dark:text-black dark:border-primary'
+                                                : 'bg-antigravity-light-surface text-antigravity-light-text/40 border-antigravity-light-border dark:bg-white/5 dark:text-white/40 dark:border-white/10'
                                                 }`}
                                         >
                                             {c}
@@ -505,7 +503,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
 
                             {/* Densidad */}
                             <div className="flex flex-col gap-3">
-                                <label className="text-[10px] font-black text-white/30 tracking-widest pl-1 uppercase">
+                                <label className="text-[10px] font-black text-antigravity-light-text/50 dark:text-white/30 tracking-widest pl-1 uppercase">
                                     FACTOR DENSIDAD (T/m³)
                                 </label>
                                 <input
@@ -516,20 +514,20 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                         const val = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
                                         setDensity(val);
                                     }}
-                                    className="w-full !bg-[#1a1a1a] border-2 border-white/10 rounded-none h-16 px-6 text-3xl font-black !text-white outline-none focus:border-primary transition-all text-center tracking-tight"
+                                    className="w-full bg-antigravity-light-surface dark:bg-[#1a1a1a] border-2 border-antigravity-light-border dark:border-white/10 rounded-none h-16 px-6 text-3xl font-black text-antigravity-light-text dark:text-white outline-none focus:border-antigravity-accent dark:focus:border-primary transition-all text-center tracking-tight"
                                     placeholder=" "
                                     autoComplete="off"
                                 />
                             </div>
 
                             {/* 4. VOLUMEN ESTIMADO (Solo lectura - IA lo calcula después) */}
-                            <div className="bg-[#111] border border-white/5 rounded-none p-8 flex flex-col items-center gap-2">
-                                <span className="text-[11px] font-black text-white/30 tracking-[0.4em] uppercase">VOLUMEN ESTIMADO</span>
+                            <div className="bg-antigravity-light-surface dark:bg-[#111] border border-antigravity-light-border dark:border-white/5 rounded-none p-8 flex flex-col items-center gap-2 shadow-sm">
+                                <span className="text-[11px] font-black text-antigravity-light-text/40 dark:text-white/30 tracking-[0.4em] uppercase">VOLUMEN ESTIMADO</span>
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-6xl font-black text-white/20 tracking-tighter">0.0</span>
-                                    <span className="text-lg font-black text-white/10 uppercase">m³</span>
+                                    <span className="text-6xl font-black text-antigravity-light-text/10 dark:text-white/20 tracking-tighter">0.0</span>
+                                    <span className="text-lg font-black text-antigravity-light-text/10 dark:text-white/10 uppercase">m³</span>
                                 </div>
-                                <span className="text-[9px] text-white/20 uppercase tracking-widest">La IA calculará el volumen</span>
+                                <span className="text-[9px] text-antigravity-light-text/30 dark:text-white/20 uppercase tracking-widest">La IA calculará el volumen</span>
                             </div>
                         </div>
                     )}
@@ -542,8 +540,8 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                 disabled={isSaving || !classification || !density}
                                 className={`w-full max-w-xs h-20 rounded-none flex items-center justify-center gap-4 transition-all
                                         ${isSaving || !classification || !density
-                                        ? 'bg-white/5 text-white/20'
-                                        : 'bg-primary text-black font-black shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95'
+                                        ? 'bg-antigravity-light-surface text-antigravity-light-text/20 dark:bg-white/5 dark:text-white/20 border border-antigravity-light-border dark:border-transparent'
+                                        : 'bg-antigravity-accent text-white dark:bg-primary dark:text-black font-black shadow-[0_0_30px_rgba(198,131,70,0.1)] dark:shadow-[0_0_30px_rgba(255,176,0,0.1)] active:scale-95'
                                     }`}
                             >
                                 {isSaving ? (

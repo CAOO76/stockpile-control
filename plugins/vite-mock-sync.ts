@@ -19,24 +19,80 @@ export function mockSyncPlugin(): Plugin {
       }
 
       server.middlewares.use((req, res, next) => {
-        // Handle CORS preflight
-        if (req.method === 'OPTIONS' && (req.url === '/__mock_sync_push' || req.url === '/__mock_sync_pull')) {
-           res.setHeader('Access-Control-Allow-Origin', '*');
-           res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
-           res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+        // Handle CORS (Wide Open for local dev sync)
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+        if (req.method === 'OPTIONS') {
            res.end();
            return;
         }
 
+        if (req.url === '/__mock_sync_reset' && req.method === 'POST') {
+          try {
+            writeFileSync(SYNC_FILE, JSON.stringify({}), 'utf-8');
+            res.end(JSON.stringify({ success: true }));
+            server.ws.send({ type: 'custom', event: 'mock:sync-updated', data: {} });
+          } catch (e) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Failed to reset' }));
+          }
+          return;
+        }
+
         if (req.url === '/__mock_sync_pull' && req.method === 'GET') {
           try {
-            const data = readFileSync(SYNC_FILE, 'utf-8');
+            const rawData = readFileSync(SYNC_FILE, 'utf-8');
+            const data = JSON.parse(rawData);
+            
+            // Strip large base64 strings to create a metadata-only payload
+            const metadataOnly: any = {};
+            Object.keys(data).forEach(key => {
+                const value = data[key];
+                // ONLY strip objects, NEVER arrays (ID lists)
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    const stripped = { ...value, __is_lazy: true };
+                    // Remove photo URLs but keep the structure
+                    if (stripped.photo_url && (stripped.photo_url.length > 100 || stripped.photo_url.startsWith('data:'))) {
+                        stripped.photo_url = '__LAZY_LOAD__';
+                    }
+                    if (stripped.initial_photo_url && stripped.initial_photo_url.length > 100) {
+                        stripped.initial_photo_url = '__LAZY_LOAD__';
+                    }
+                    if (stripped.last_photo_url && stripped.last_photo_url.length > 100) {
+                        stripped.last_photo_url = '__LAZY_LOAD__';
+                    }
+                    metadataOnly[key] = stripped;
+                } else {
+                    metadataOnly[key] = value;
+                }
+            });
+
             res.setHeader('Content-Type', 'application/json');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.end(data);
+            res.end(JSON.stringify(metadataOnly));
           } catch (e) {
             res.statusCode = 500;
             res.end(JSON.stringify({ error: 'Failed to read' }));
+          }
+          return;
+        }
+
+        // New endpoint to fetch full data for a specific key (Lazy Load)
+        if (req.url?.startsWith('/__mock_sync_get') && req.method === 'GET') {
+          try {
+            const url = new URL(req.url, `http://${req.headers.host}`);
+            const key = url.searchParams.get('key');
+            if (!key) throw new Error('Key required');
+
+            const data = JSON.parse(readFileSync(SYNC_FILE, 'utf-8'));
+            const value = data[key] || null;
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(value));
+          } catch (e) {
+            res.statusCode = 404;
+            res.end(JSON.stringify({ error: 'Key not found' }));
           }
           return;
         }
@@ -61,7 +117,6 @@ export function mockSyncPlugin(): Plugin {
               writeFileSync(SYNC_FILE, JSON.stringify(merged, null, 2), 'utf-8');
 
               res.setHeader('Content-Type', 'application/json');
-              res.setHeader('Access-Control-Allow-Origin', '*');
               res.end(JSON.stringify({ success: true }));
 
               // Enviar mensaje HMR para avisar a clientes conectados (Desktop)

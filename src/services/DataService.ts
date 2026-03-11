@@ -13,6 +13,7 @@
  */
 
 import type { SecureContext } from '@minreport/sdk';
+import { idbStorage } from '../utils/indexedDB';
 import type { StockpileAsset, StockpileMeasurement } from '../types/StockpileAsset';
 
 export type StockpileData = StockpileAsset;
@@ -96,12 +97,15 @@ export class DataService {
     }
 
     private async readList(key: string): Promise<string[]> {
-        return (await this.read<string[]>(key)) ?? [];
+        const val = await this.read<any>(key);
+        return Array.isArray(val) ? val : [];
     }
 
     private async addToList(key: string, id: string): Promise<void> {
         const list = await this.readList(key);
-        if (!list.includes(id)) await this.write(key, [...list, id]);
+        if (Array.isArray(list) && !list.includes(id)) {
+            await this.write(key, [...list, id]);
+        }
     }
 
     // ─── ACTIVOS ───────────────────────────────
@@ -126,7 +130,61 @@ export class DataService {
     }
 
     async getAsset(id: string): Promise<StockpileAsset | null> {
-        return this.read<StockpileAsset>(K.asset(id));
+        const asset = await this.read<StockpileAsset>(K.asset(id));
+        if (asset && (asset as any).__is_lazy) {
+            // Lazy loading on demand
+            const { fetchFullKey } = await import('./sdk-mock');
+            const { idbStorage } = await import('../utils/indexedDB');
+            const full = await fetchFullKey(K.asset(id));
+            if (full) {
+                await idbStorage.set(K.asset(id), full);
+                // Notificar suscriptores del cambio a "Full"
+                bus.emit(`asset:${id}`, full);
+                return full;
+            }
+        }
+        return asset;
+    }
+
+    async deleteAsset(id: string): Promise<void> {
+        // 1. Remove from assetIds list
+        const ids = await this.readList(K.assetIds);
+        if (Array.isArray(ids)) {
+            await this.write(K.assetIds, ids.filter(i => i !== id));
+        }
+
+        // 2. Remove actual asset record
+        await idbStorage.delete(K.asset(id));
+
+        // 3. Remove all associated measurements
+        const measIds = await this.readList(K.measIds(id));
+        if (Array.isArray(measIds)) {
+            for (const mid of measIds) {
+                await idbStorage.delete(K.meas(mid));
+            }
+        }
+        await idbStorage.delete(K.measIds(id));
+
+        // 4. Notify UI to refresh
+        this.getAllAssets().then(all => bus.emit('assets', all));
+        console.log(`[DataService] Activo ${id} y sus mediciones eliminados`);
+    }
+
+    async getMeasurement(id: string): Promise<StockpileMeasurement | null> {
+        const meas = await this.read<StockpileMeasurement>(K.meas(id));
+        if (meas && (meas as any).__is_lazy) {
+            // Lazy loading on demand
+            const { fetchFullKey } = await import('./sdk-mock');
+            const { idbStorage } = await import('../utils/indexedDB');
+            const full = await fetchFullKey(K.meas(id));
+            if (full) {
+                await idbStorage.set(K.meas(id), full);
+                // Notificar suscriptores del cambio a "Full"
+                bus.emit(`meas_item:${id}`, full);
+                return full;
+            }
+        }
+        return meas;
     }
 
     async getStockpileData(id: string): Promise<StockpileAsset | null> {
@@ -204,9 +262,6 @@ export class DataService {
         }
     }
 
-    async getMeasurement(id: string): Promise<StockpileMeasurement | null> {
-        return this.read<StockpileMeasurement>(K.meas(id));
-    }
 
     async getMeasurements(assetId: string): Promise<StockpileMeasurement[]> {
         try {

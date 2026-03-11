@@ -35,7 +35,8 @@ export default {
                         surface: '#ffffff',
                         text: '#1f2937',
                         muted: '#6b7280',
-                        border: '#e5e7eb',
+                        border: '#d1d5db',      // gray-300 — clearly visible on white
+                        input: '#9ca3af',       // gray-400 — high contrast for inputs
                     },
                     dark: {
                         bg: '#000000',

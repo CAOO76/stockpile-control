@@ -38,10 +38,10 @@ export const M3TextField: React.FC<M3TextFieldProps> = ({
                     className={`m3-text-field-input w-full h-14 pt-5 pb-1 px-4 text-base 
                         bg-antigravity-light-surface dark:bg-antigravity-dark-surface 
                         text-antigravity-light-text dark:text-antigravity-dark-text 
-                        rounded-none border-b transition-all duration-200 outline-none
+                        rounded-none border transition-all duration-200 outline-none
                         ${hasError
                             ? 'border-red-500'
-                            : 'border-antigravity-light-border dark:border-antigravity-dark-border focus:border-antigravity-accent'
+                            : 'border-antigravity-light-input dark:border-antigravity-dark-border focus:border-antigravity-accent dark:focus:border-antigravity-accent'
                         }`}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}

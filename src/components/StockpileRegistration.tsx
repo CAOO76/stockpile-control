@@ -2,232 +2,234 @@ import React, { useState, useEffect } from 'react';
 import { dataService } from '../services/DataService';
 import { storageService } from '../services/StorageService';
 import { M3TextField } from './M3TextField';
-import { M3Select } from './M3Select';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { compressImage } from '../utils/imageOptimizer';
+import { MobileScanner } from './MobileScanner';
+import { ManualCapture } from './ManualCapture';
+import { CaptureSelection } from './CaptureSelection';
+import { GeometrySelection } from './GeometrySelection';
+import type { GeometryType } from './GeometrySelection';
 
 interface StockpileRegistrationProps {
     onSuccess: (assetId: string) => void;
     onCancel: () => void;
 }
 
-/**
- * StockpileRegistration (V3.2 - Visual Optimized)
- * Optimized images on client-side for performance and storage.
- */
+type RegStep = 'INFO' | 'METHOD' | 'GEOMETRY' | 'CAPTURE_MANUAL' | 'CAPTURE_DIGITAL';
+
+const PASO_LABEL: Record<RegStep, string> = {
+    INFO: 'PASO 1 / 4',
+    METHOD: 'PASO 2 / 4',
+    GEOMETRY: 'PASO 3 / 4',
+    CAPTURE_MANUAL: 'PASO 4 / 4',
+    CAPTURE_DIGITAL: 'PASO 4 / 4',
+};
+
+const HEADER_TITLE: Record<RegStep, string> = {
+    INFO: 'REGISTRO DE ACTIVO',
+    METHOD: 'MÉTODO DE CUBICACIÓN',
+    GEOMETRY: 'GEOMETRÍA DEL STOCK',
+    CAPTURE_MANUAL: 'CAPTURA TÉCNICA',
+    CAPTURE_DIGITAL: 'ESCANEO DIGITAL',
+};
+
 export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ onSuccess, onCancel }) => {
+    // --- Paso 1: Datos del activo ---
     const [name, setName] = useState('');
     const [clase, setClase] = useState<'mineral' | 'esteril' | 'baja_ley'>('mineral');
     const [locationRef, setLocationRef] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
-    const [savedAssetId, setSavedAssetId] = useState<string | null>(null);
+    const [assetPhoto, setAssetPhoto] = useState<string | null>(null);
+
+    // --- Wizard State ---
+    const [step, setStep] = useState<RegStep>('INFO');
+    const [geometry, setGeometry] = useState<GeometryType>('CONO_ELIPTICO');
+
+    // --- Asset IDcreado antes de ManualCapture ---
+    const [createdAssetId, setCreatedAssetId] = useState<string | null>(null);
+    const [isCreatingAsset, setIsCreatingAsset] = useState(false);
+
+    // --- GPS ---
     const [gps, setGps] = useState<{ lat: number; lng: number; acc: number } | null>(null);
-    const [photo, setPhoto] = useState<string | null>(null);
 
     useEffect(() => {
-        const initGps = async () => {
-            try {
-                const permission = await Geolocation.checkPermissions();
-                if (permission.location !== 'granted') {
-                    await Geolocation.requestPermissions();
-                }
-                const pos = await Geolocation.getCurrentPosition({
-                    enableHighAccuracy: true,
-                    timeout: 10000
-                });
-                setGps({
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    acc: pos.coords.accuracy
-                });
-            } catch (err) {
-                console.warn('[Registration] Capacitor GPS Error:', err);
-            }
-        };
-        initGps();
+        Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 5000 })
+            .then(pos => setGps({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }))
+            .catch(() => {});
     }, []);
 
-    const takePhoto = async () => {
-        if (isSaved) return;
+    const takeAssetPhoto = async () => {
         try {
             const image = await Camera.getPhoto({
-                quality: 90, // We optimize manually after
-                allowEditing: false,
-                resultType: CameraResultType.DataUrl,
-                source: CameraSource.Camera,
-                correctOrientation: true,
-                saveToGallery: false
+                quality: 80, resultType: CameraResultType.DataUrl,
+                source: CameraSource.Camera, correctOrientation: true, saveToGallery: false
             });
-
             if (image.dataUrl) {
-                setPhoto(image.dataUrl);
+                const optimized = await compressImage(image.dataUrl, 1024, 0.7);
+                setAssetPhoto(optimized);
             }
-        } catch (err) {
-            console.warn('[Registration] Camera Canceled or Error:', err);
-        }
+        } catch { /* canceled */ }
     };
 
-    const handleSave = async () => {
-        if (!name.trim() || !photo) return;
-        setIsSaving(true);
-
+    /**
+     * Crea el activo con la info del Paso 1 y navega al Paso 4 (ManualCapture).
+     * El activo se crea aquí para poder pasar el assetId real al ManualCapture.
+     */
+    const goToManualCapture = async (selectedGeometry: GeometryType) => {
+        setGeometry(selectedGeometry);
+        setIsCreatingAsset(true);
         try {
-            console.log('[Registration] Optimizing and uploading visuals (HD REPORT)...');
-
-            // 1. Convert DataURL to Blob
-            const response = await fetch(photo);
-            const blob = await response.blob();
-
-            // 2. Upload to Cloud Storage
-            const uploadResult = await storageService.uploadStockpileImage(blob, `new_${Date.now()}`, {
-                quality: 0.85,
-                format: 'jpeg',
-                maxWidth: 1920
-            });
-
-            console.log('[Registration] Creating asset with Storage visuals...');
+            const assetBlob = await fetch(assetPhoto!).then(r => r.blob());
+            const assetUpload = await storageService.uploadStockpileImage(assetBlob, `asset_${Date.now()}`);
             const assetId = await dataService.createAsset({
-                name,
-                clase,
-                location_ref: locationRef,
-                initial_photo_url: uploadResult.url,
-                thumbnail_url: uploadResult.url, // Standardizing to one URL for now to save complexity
-                geo_point: {
-                    latitude: gps?.lat || 0,
-                    longitude: gps?.lng || 0,
-                    altitude: null,
-                    accuracy: gps?.acc || 0
-                }
+                name, clase, location_ref: locationRef,
+                initial_photo_url: assetUpload.url,
+                thumbnail_url: assetUpload.url,
+                geo_point: { latitude: gps?.lat || 0, longitude: gps?.lng || 0, altitude: null, accuracy: gps?.acc || 0 }
             });
-            console.log('[Registration] Success:', assetId);
-
-            setSavedAssetId(assetId);
-            setIsSaved(true);
-
-            if (navigator.vibrate) navigator.vibrate([30, 10, 30]);
-
-        } catch (error: any) {
-            console.error('[Registration] Save error:', error);
-            alert(`ERROR: ${error.message || 'Error de conexión'}`);
+            setCreatedAssetId(assetId);
+            setStep('CAPTURE_MANUAL');
+        } catch (e: any) {
+            alert(`Error al crear activo: ${e.message}`);
         } finally {
-            setIsSaving(false);
+            setIsCreatingAsset(false);
         }
     };
 
-    const handleBack = () => {
-        if (isSaved && savedAssetId) {
-            onSuccess(savedAssetId);
-        } else {
-            onCancel();
-        }
-    };
+    // Solo mostrar header propio en pasos 1-3 y digital. ManualCapture tiene su propio header.
+    const showOwnHeader = step !== 'CAPTURE_MANUAL';
 
     return (
-        <motion.main
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="h-screen w-screen bg-black flex flex-col font-atkinson text-white overflow-hidden select-none"
-        >
-            <header className="pt-14 pb-4 px-6 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between z-50">
-                <div className="flex flex-col">
-                    <h1 className="text-[9px] font-bold tracking-[0.4em] uppercase text-white/30">
-                        {isSaved ? 'ACTIVO REGISTRADO' : 'NUEVO ACTIVO'}
-                    </h1>
-                    <h2 className="text-lg font-bold tracking-tight text-white/90">
-                        {isSaved ? 'Ficha de Alta' : 'Registro'}
-                    </h2>
-                </div>
-                <div className="flex gap-3">
-                    {isSaved ? (
-                        <>
-                            <button onClick={handleBack} className="w-12 h-12 rounded-none bg-white/5 flex items-center justify-center active:scale-90 border border-white/5">
-                                <span className="material-symbols-outlined text-primary">arrow_back</span>
-                            </button>
-                            <button onClick={() => setIsSaved(false)} className="w-12 h-12 rounded-none bg-white/5 flex items-center justify-center active:scale-90 border border-white/5 shadow-[0_0_15px_rgba(255,176,0,0.1)]">
-                                <span className="material-symbols-outlined text-primary">edit</span>
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button onClick={onCancel} className="w-12 h-12 rounded-none bg-white/5 flex items-center justify-center active:scale-90 border border-white/5">
-                                <span className="material-symbols-outlined text-red-500">close</span>
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={isSaving || !name.trim() || !locationRef.trim() || !photo}
-                                className="w-16 h-12 rounded-none bg-primary flex items-center justify-center active:scale-90 shadow-[0_0_20px_rgba(255,176,0,0.2)] disabled:opacity-20 disabled:grayscale"
-                            >
-                                {isSaving ? <span className="material-symbols-outlined animate-spin text-black">sync</span> : <span className="material-symbols-outlined text-black font-bold">save</span>}
-                            </button>
-                        </>
-                    )}
-                </div>
-            </header>
+        <main className="h-screen w-screen bg-antigravity-light-bg dark:bg-antigravity-dark-bg flex flex-col font-atkinson text-antigravity-light-text dark:text-antigravity-dark-text overflow-hidden transition-colors">
 
-            <section className="flex-1 overflow-y-auto p-6 space-y-6 hide-scrollbar relative">
-                <div className="space-y-3">
-                    <h3 className="text-[9px] font-bold uppercase tracking-[0.3em] text-white/20">Evidencia Inicial</h3>
-                    <div
-                        onClick={takePhoto}
-                        className="relative w-full aspect-video bg-white/5 rounded-none border border-dashed border-white/10 flex flex-col items-center justify-center overflow-hidden active:bg-white/10"
-                    >
-                        {photo ? (
-                            <>
-                                <img src={photo} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/20" />
-                                {!isSaved && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
-                                        className="absolute top-4 right-4 w-10 h-10 bg-black/60 backdrop-blur-md rounded-none flex items-center justify-center border border-white/10"
-                                    >
-                                        <span className="material-symbols-outlined text-white/60">delete</span>
-                                    </button>
-                                )}
-                                <div className="absolute bottom-4 left-4 flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-green-500 text-sm">check_circle</span>
-                                    <span className="text-[8px] font-black uppercase text-white tracking-widest bg-black/40 px-2 py-0.5 rounded">Capturado</span>
+            {/* ── Header (solo para pasos 1, 2, 3 y digital) ── */}
+            {showOwnHeader && (
+                <header className="pt-12 pb-3 px-5 border-b border-antigravity-light-border dark:border-antigravity-dark-border bg-antigravity-light-surface/60 dark:bg-antigravity-dark-surface/60 backdrop-blur-xl flex items-center justify-between flex-none z-50">
+                    <div>
+                        <p className="text-[8px] font-black tracking-[0.4em] uppercase text-antigravity-accent">{PASO_LABEL[step]}</p>
+                        <h1 className="text-base font-black tracking-tight leading-none mt-0.5">{HEADER_TITLE[step]}</h1>
+                    </div>
+                    <button onClick={onCancel} className="w-10 h-10 bg-antigravity-light-surface dark:bg-antigravity-dark-surface border border-antigravity-light-border dark:border-antigravity-dark-border flex items-center justify-center active:scale-90 transition-all">
+                        <span className="material-symbols-outlined text-red-500 text-xl">close</span>
+                    </button>
+                </header>
+            )}
+
+            {/* ── Content ── */}
+            <div className="flex-1 overflow-y-auto hide-scrollbar">
+                <AnimatePresence mode="wait">
+
+                    {/* ─ STEP 1: INFO ─ */}
+                    {step === 'INFO' && (
+                        <motion.div key="info" initial={{ x: 24, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -24, opacity: 0 }} transition={{ duration: 0.18 }} className="p-5 flex flex-col gap-6">
+                            <div className="space-y-3">
+                                <p className="text-[8px] font-black uppercase tracking-[0.3em] text-antigravity-accent">Identificación</p>
+                                <M3TextField label="ID / NOMBRE" value={name} onChange={setName} autoComplete="off" />
+                                <div>
+                                    <p className="text-[8px] font-black uppercase tracking-[0.3em] text-antigravity-light-text/30 dark:text-antigravity-dark-text/30 mb-2">CLASE DE MATERIAL</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(['mineral', 'esteril', 'baja_ley'] as const).map(c => (
+                                            <button key={c} onClick={() => setClase(c)} className={`h-10 text-[9px] font-black uppercase tracking-wider border transition-all ${clase === c ? 'bg-antigravity-accent text-white border-antigravity-accent' : 'bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-antigravity-light-border dark:border-antigravity-dark-border opacity-50'}`}>
+                                                {c === 'mineral' ? 'Mineral' : c === 'esteril' ? 'Estéril' : 'Baja Ley'}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                            </>
-                        ) : (
-                            <>
-                                <span className="material-symbols-outlined text-4xl text-white/10 mb-2">add_a_photo</span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/20">Capturar Portada</span>
-                            </>
-                        )}
-                    </div>
-                </div>
+                                <M3TextField label="REFERENCIA UBICACIÓN" value={locationRef} onChange={setLocationRef} autoComplete="off" />
+                            </div>
 
-                <div className={`space-y-4 ${isSaved ? 'opacity-60 pointer-events-none' : ''}`}>
-                    <M3TextField label="ID / NOMBRE" value={name} onChange={setName} placeholder=" " autoComplete="off" />
-                    <M3Select
-                        label="CLASE"
-                        value={clase}
-                        options={[
-                            { id: 'mineral', label: 'Mineral' },
-                            { id: 'esteril', label: 'Estéril' },
-                            { id: 'baja_ley', label: 'Baja Ley' }
-                        ]}
-                        onChange={(v) => setClase(v as any)}
-                    />
-                    <M3TextField label="REFERENCIA UBICACIÓN" value={locationRef} onChange={setLocationRef} placeholder=" " autoComplete="off" />
+                            <div className="space-y-2">
+                                <p className="text-[8px] font-black uppercase tracking-[0.3em] text-antigravity-accent">Foto de Portada</p>
+                                <div onClick={takeAssetPhoto} className="relative w-full aspect-video bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-2 border-dashed border-antigravity-light-border dark:border-antigravity-dark-border flex flex-col items-center justify-center overflow-hidden active:border-antigravity-accent transition-colors">
+                                    {assetPhoto
+                                        ? <><img src={assetPhoto} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/20" /><span className="absolute bottom-2 left-3 text-[9px] font-black uppercase tracking-widest text-white bg-green-600 px-2 py-0.5">✓ CAPTURADO</span></>
+                                        : <><span className="material-symbols-outlined text-3xl opacity-10 mb-1">add_a_photo</span><span className="text-[9px] font-black uppercase tracking-widest opacity-20">TOCA PARA CAPTURAR</span></>
+                                    }
+                                </div>
+                            </div>
 
-                    <div className="p-3 bg-white/5 rounded-none border border-white/5">
-                        <span className="text-[8px] font-bold uppercase tracking-[0.1em] text-white/20 block">GEODATOS</span>
-                        <div className="flex justify-between items-center mt-1">
-                            <span className="text-xs font-bold text-primary/60">PRECISIÓN: {gps ? `±${gps.acc.toFixed(1)} m` : '---'}</span>
-                            <span className="text-[10px] font-medium text-white/30 uppercase">
-                                {gps ? `${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}` : 'Sincronizando GPS...'}
-                            </span>
+                            <button disabled={!name || !locationRef || !assetPhoto} onClick={() => setStep('METHOD')} className="w-full h-14 bg-antigravity-accent text-white font-black text-sm uppercase tracking-widest disabled:opacity-20 active:scale-95 transition-all">
+                                CONTINUAR →
+                            </button>
+                        </motion.div>
+                    )}
+
+                    {/* ─ STEP 2: METHOD — usa CaptureSelection oficial ─ */}
+                    {step === 'METHOD' && (
+                        <CaptureSelection
+                            onSelection={(type) => {
+                                if (type === 'digital') setStep('CAPTURE_DIGITAL');
+                                else setStep('GEOMETRY');
+                            }}
+                            onBack={() => setStep('INFO')}
+                        />
+                    )}
+
+                    {/* ─ STEP 3: GEOMETRY — usa GeometrySelection oficial ─ */}
+                    {step === 'GEOMETRY' && (
+                        <div className="relative">
+                            <GeometrySelection
+                                onSelection={goToManualCapture}
+                                onBack={() => setStep('METHOD')}
+                            />
+                            {/* Overlay de carga mientras se crea el activo */}
+                            {isCreatingAsset && (
+                                <div className="absolute inset-0 bg-antigravity-dark-bg/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50">
+                                    <span className="material-symbols-outlined text-5xl text-antigravity-accent animate-spin">sync</span>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Registrando activo…</p>
+                                </div>
+                            )}
                         </div>
-                    </div>
-                </div>
-            </section>
+                    )}
 
-            <footer className="p-6 pb-12 flex justify-center opacity-10">
-                <span className="text-[8px] font-black tracking-[0.8em] text-white">NATIVE_BRIDGE_V6</span>
-            </footer>
-        </motion.main>
+                    {/* ─ STEP 4a: MANUAL — usa ManualCapture oficial ─ */}
+                    {step === 'CAPTURE_MANUAL' && createdAssetId && (
+                        <ManualCapture
+                            assetId={createdAssetId}
+                            initialGeometry={geometry}
+                            hidePhoto={true}
+                            onSuccess={(measurementId) => {
+                                console.log('[Wizard] Medición creada:', measurementId);
+                                onSuccess(createdAssetId);
+                            }}
+                            onBack={() => {
+                                setStep('GEOMETRY');
+                            }}
+                        />
+                    )}
+
+                    {/* ─ STEP 4b: DIGITAL ─ */}
+                    {step === 'CAPTURE_DIGITAL' && (
+                        <motion.div key="capture_dig" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full w-full">
+                            <div className="absolute inset-0 z-[100]">
+                                <MobileScanner
+                                    assetId="NEW_ASSET"
+                                    onSuccess={async (mid) => {
+                                        try {
+                                            const assetBlob = await fetch(assetPhoto!).then(r => r.blob());
+                                            const assetUpload = await storageService.uploadStockpileImage(assetBlob, `asset_${Date.now()}`);
+                                            const assetId = await dataService.createAsset({
+                                                name, clase, location_ref: locationRef,
+                                                initial_photo_url: assetUpload.url, thumbnail_url: assetUpload.url,
+                                                geo_point: { latitude: gps?.lat || 0, longitude: gps?.lng || 0, altitude: null, accuracy: gps?.acc || 0 }
+                                            });
+                                            const all = await dataService.getAllMeasurements();
+                                            const current = all.find(m => m.id === mid);
+                                            if (current) await dataService.addMeasurement({ ...current, assetId });
+                                            onSuccess(assetId);
+                                        } catch { alert('Error al vincular escaneo'); }
+                                    }}
+                                    onBack={() => setStep('METHOD')}
+                                />
+                            </div>
+                            <div className="absolute top-16 left-5 z-[110] bg-antigravity-accent px-2 py-1 text-[9px] font-black text-white uppercase tracking-widest">{name}</div>
+                        </motion.div>
+                    )}
+
+                </AnimatePresence>
+            </div>
+
+        </main>
     );
 };
