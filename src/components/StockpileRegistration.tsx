@@ -50,6 +50,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
 
     // --- Asset IDcreado antes de ManualCapture ---
     const [createdAssetId, setCreatedAssetId] = useState<string | null>(null);
+    const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
     const [isCreatingAsset, setIsCreatingAsset] = useState(false);
 
     // --- GPS ---
@@ -84,6 +85,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
         try {
             const assetBlob = await fetch(assetPhoto!).then(r => r.blob());
             const assetUpload = await storageService.uploadStockpileImage(assetBlob, `asset_${Date.now()}`);
+            setUploadedPhotoUrl(assetUpload.url);
             const assetId = await dataService.createAsset({
                 name, clase, location_ref: locationRef,
                 initial_photo_url: assetUpload.url,
@@ -138,7 +140,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                                         ))}
                                     </div>
                                 </div>
-                                <Field
+                                <M3TextField
                                     label={t('registration.location_ref_label')}
                                     placeholder={t('registration.location_ref_placeholder')}
                                     value={locationRef}
@@ -196,6 +198,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                             assetId={createdAssetId}
                             initialGeometry={geometry}
                             hidePhoto={true}
+                            initialPhotoUrl={uploadedPhotoUrl || undefined}
                             onSuccess={(measurementId) => {
                                 console.log('[Wizard] Medición creada:', measurementId);
                                 onSuccess(createdAssetId);

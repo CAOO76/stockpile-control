@@ -18,7 +18,6 @@ import type { GeometryType } from './components/GeometrySelection';
 import { ThemeToggle } from './components/ThemeToggle';
 import { SyncIndicator } from './components/SyncIndicator';
 
-
 export type ViewState =
   | 'home'
   | 'registration'
@@ -58,7 +57,15 @@ function App() {
     setView('asset_portada');
   };
 
-  const handleAddMeasurement = () => setView('selection');
+  const handleAddMeasurement = () => {
+    if (!selectedAssetId) {
+      // Guard: nunca navegar a capture sin un activo seleccionado
+      console.warn('[App] handleAddMeasurement llamado sin selectedAssetId — redirigiendo al home');
+      setView('home');
+      return;
+    }
+    setView('selection');
+  };
 
   const handleCaptureSuccess = async (measurementId: string) => {
     console.log('[App] Capture Success:', measurementId);
@@ -85,102 +92,124 @@ function App() {
         <ThemeToggle />
         <AnimatePresence mode="wait">
           {view === 'home' && (
-            <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <MobileHome
-                onStartNewScan={handleStartRegistration}
-                onViewRecords={() => setView('stock_list')}
-              />
-            </motion.div>
-          )}
+              <motion.div key="home" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                <MobileHome
+                  onStartNewScan={handleStartRegistration}
+                  onViewRecords={() => setView('stock_list')}
+                />
+              </motion.div>
+            )}
 
-          {view === 'registration' && (
-            <motion.div key="reg" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <StockpileRegistration
-                onSuccess={handleRegistrationSuccess}
-                onCancel={() => setView('home')}
-              />
-            </motion.div>
-          )}
+            {view === 'registration' && (
+              <motion.div key="reg" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                <StockpileRegistration
+                  onSuccess={handleRegistrationSuccess}
+                  onCancel={() => setView('home')}
+                />
+              </motion.div>
+            )}
 
-          {view === 'stock_list' && (
-            <motion.div key="list" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <StockList
-                onSelectAsset={(id) => {
-                  setSelectedAssetId(id);
-                  setView('asset_portada');
-                }}
-                onBack={() => setView('home')}
-              />
-            </motion.div>
-          )}
+            {view === 'stock_list' && (
+              <motion.div key="list" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                <StockList
+                  onSelectAsset={(id) => {
+                    setSelectedAssetId(id);
+                    setView('asset_portada');
+                  }}
+                  onBack={() => setView('home')}
+                />
+              </motion.div>
+            )}
 
-          {view === 'asset_portada' && selectedAssetId && (
-            <motion.div key="portada" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <StockpileDashboard
-                assetId={selectedAssetId}
-                onAddMeasurement={handleAddMeasurement}
-                onSelectMeasurement={(mid) => {
-                  setSelectedMeasurementId(mid);
-                  setView('measurement_detail');
-                }}
-                onBack={() => setView('home')}
-              />
-            </motion.div>
-          )}
+            {view === 'asset_portada' && selectedAssetId && (
+              <motion.div key="portada" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                <StockpileDashboard
+                  assetId={selectedAssetId}
+                  onAddMeasurement={handleAddMeasurement}
+                  onSelectMeasurement={(mid) => {
+                    setSelectedMeasurementId(mid);
+                    setView('measurement_detail');
+                  }}
+                  onBack={() => setView('home')}
+                />
+              </motion.div>
+            )}
 
-          {view === 'selection' && (
-            <motion.div key="selection" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <CaptureSelection
-                onSelection={(type) => {
-                  if (type === 'digital') setView('capture');
-                  else setView('geometry_selection');
-                }}
-                onBack={() => setView('asset_portada')}
-              />
-            </motion.div>
-          )}
+            {view === 'selection' && (
+              <motion.div key="selection" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                <CaptureSelection
+                  onSelection={(type) => {
+                    if (type === 'digital') setView('capture');
+                    else setView('geometry_selection');
+                  }}
+                  onBack={() => setView('asset_portada')}
+                />
+              </motion.div>
+            )}
 
-          {view === 'geometry_selection' && (
-            <motion.div key="geometry" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <GeometrySelection
-                onSelection={(type) => {
-                  setSelectedGeometry(type);
-                  setView('manual_capture');
-                }}
-                onBack={() => setView('selection')}
-              />
-            </motion.div>
-          )}
+            {view === 'geometry_selection' && (
+              <motion.div key="geometry" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                <GeometrySelection
+                  onSelection={(type) => {
+                    setSelectedGeometry(type);
+                    setView('manual_capture');
+                  }}
+                  onBack={() => setView('selection')}
+                />
+              </motion.div>
+            )}
 
-          {view === 'capture' && selectedAssetId && (
-            <motion.div key="capture" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <MobileScanner
-                assetId={selectedAssetId}
-                onSuccess={handleCaptureSuccess}
-                onBack={() => setView('selection')}
-              />
-            </motion.div>
-          )}
+            {view === 'capture' && (
+              <motion.div key="capture" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                {selectedAssetId ? (
+                  <MobileScanner
+                    assetId={selectedAssetId}
+                    onSuccess={handleCaptureSuccess}
+                    onBack={() => setView('selection')}
+                  />
+                ) : (
+                  // Guard: pantalla de error recuperable si no hay assetId (nunca debería ocurrir)
+                  <div className="h-full w-full flex flex-col items-center justify-center gap-6 bg-antigravity-dark-bg p-8">
+                    <span className="material-symbols-outlined text-6xl text-red-500">error</span>
+                    <p className="text-white/60 text-xs font-bold uppercase tracking-widest text-center">Sin activo seleccionado</p>
+                    <button onClick={() => setView('home')} className="px-6 py-3 bg-antigravity-accent text-white font-black text-xs uppercase tracking-widest">
+                      ← Volver al inicio
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
 
-          {view === 'manual_capture' && selectedAssetId && (
-            <motion.div key="manual" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <ManualCapture
-                assetId={selectedAssetId}
-                initialGeometry={selectedGeometry}
-                onSuccess={handleCaptureSuccess}
-                onBack={() => setView('geometry_selection')}
-              />
-            </motion.div>
-          )}
+            {view === 'manual_capture' && (
+              <motion.div key="manual" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                {selectedAssetId ? (
+                  <ManualCapture
+                    assetId={selectedAssetId}
+                    initialGeometry={selectedGeometry}
+                    onSuccess={handleCaptureSuccess}
+                    onBack={() => setView('geometry_selection')}
+                  />
+                ) : (
+                  // Guard: pantalla de error recuperable
+                  <div className="h-full w-full flex flex-col items-center justify-center gap-6 bg-antigravity-dark-bg p-8">
+                    <span className="material-symbols-outlined text-6xl text-red-500">error</span>
+                    <p className="text-white/60 text-xs font-bold uppercase tracking-widest text-center">Activo no disponible</p>
+                    <button onClick={() => setView('home')} className="px-6 py-3 bg-antigravity-accent text-white font-black text-xs uppercase tracking-widest">
+                      ← Volver al inicio
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            )}
 
-          {view === 'measurement_detail' && selectedMeasurementId && (
-            <motion.div key="detail" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
-              <MeasurementDetail
-                measurementId={selectedMeasurementId}
-                onBack={() => setView('asset_portada')}
-              />
-            </motion.div>
-          )}
+            {view === 'measurement_detail' && selectedMeasurementId && (
+              <motion.div key="detail" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">
+                <MeasurementDetail
+                  measurementId={selectedMeasurementId}
+                  onBack={() => setView('asset_portada')}
+                />
+              </motion.div>
+            )}
 
           {view === 'vision' && (
             <motion.div key="vision" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full w-full">

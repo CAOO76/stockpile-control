@@ -14,9 +14,10 @@ interface ManualCaptureProps {
     onSuccess: (measurementId: string) => void;
     onBack: () => void;
     hidePhoto?: boolean; // true cuando viene del wizard (usa foto del activo)
+    initialPhotoUrl?: string; // Url de la foto capturada en el primer paso del wizard
 }
 
-export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGeometry, onSuccess, onBack, hidePhoto = false }) => {
+export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGeometry, onSuccess, onBack, hidePhoto = false, initialPhotoUrl }) => {
     const { t } = useTranslation();
     const [geometria] = useState<GeometryType>(initialGeometry);
     const [dimensions, setDimensions] = useState({ a: '', b: '', h: '', ap: '', bp: '', p: '', pp: '' });
@@ -82,8 +83,8 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
         setIsSaving(true);
         try {
             // 1. Subir foto de evidencia (solo si se capturó)
-            let photoUrl = '';
-            if (photo) {
+            let photoUrl = initialPhotoUrl || '';
+            if (photo && !hidePhoto) {
                 const response = await fetch(photo);
                 const blob = await response.blob();
                 const uploadResult = await storageService.uploadStockpileImage(blob, assetId);

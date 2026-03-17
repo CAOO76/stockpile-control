@@ -1,0 +1,11 @@
+{
+  "type": "Plugin",
+  "name": "stockpile-control",
+  "description": "Plugin de cubicación de acopios para MINREPORT",
+  "host": "minreport",
+  "firebase": {
+    "mode": "emulator-only",
+    "emulatorProject": "stockpile-control-demo",
+    "emulators": ["auth", "firestore", "storage"]
+  }
+}

@@ -1,14 +1,38 @@
 
 import { networkInterfaces } from 'os';
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { execSync, spawn } from 'child_process';
 import { join } from 'path';
 
-// Get Local IP
+// ─── Leer manifest de tipo de proyecto ───────────────────────────────────────
+const manifestPath = join(process.cwd(), 'antigravity.project.json');
+let projectType = 'Plugin'; // default seguro
+let emulatorProject = 'demo-local';
+let emulatorsToStart = ['auth', 'firestore', 'storage'];
+
+try {
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    projectType = manifest.type || 'Plugin';
+    emulatorProject = manifest.firebase?.emulatorProject || emulatorProject;
+    emulatorsToStart = manifest.firebase?.emulators || emulatorsToStart;
+    console.log(`\n📋 Tipo de Proyecto: ${projectType} (${manifest.name})`);
+} catch (err) {
+    console.warn('⚠️  antigravity.project.json no encontrado. Asumiendo tipo: Plugin (modo seguro)');
+}
+
+// ─── Validación de seguridad: Plugins no despliegan a producción ──────────────
+if (projectType === 'Plugin') {
+    console.log('🔌 Modo Plugin: Solo emuladores Firebase. Sin proyecto de producción vinculado.');
+} else if (projectType === 'APP') {
+    console.log('📦 Modo APP: Firebase en producción disponible.');
+} else {
+    console.error(`❌ Tipo de proyecto desconocido en antigravity.project.json: "${projectType}"`);
+    process.exit(1);
+}
+
+// ─── Detectar IP local ────────────────────────────────────────────────────────
 const nets = networkInterfaces();
 let ip = 'localhost';
-
-// Prioritize Ethernet/Wi-Fi interfaces
 for (const name of Object.keys(nets)) {
     for (const net of nets[name]) {
         if (net.family === 'IPv4' && !net.internal) {
@@ -19,18 +43,15 @@ for (const name of Object.keys(nets)) {
     if (ip !== 'localhost') break;
 }
 
-const PROJECT_ID = 'stockpile-control-demo';
 const emulatorDataPath = join(process.cwd(), '.firebase', 'emulator_data');
-
-// Ensure directory exists
 try { mkdirSync(emulatorDataPath, { recursive: true }); } catch (e) { }
 
 console.log(`\n🚀 Starting Live Reload...`);
 console.log(`📍 Local IP Detected: http://${ip}:5190`);
 
+// ─── Patch capacitor.config.ts ────────────────────────────────────────────────
 const configPath = join(process.cwd(), 'capacitor.config.ts');
 let originalConfig = '';
-
 try {
     originalConfig = readFileSync(configPath, 'utf-8');
 } catch (err) {
@@ -38,7 +59,6 @@ try {
     process.exit(1);
 }
 
-// Inject server url into config
 let newConfig = originalConfig;
 if (originalConfig.includes('server: {')) {
     newConfig = originalConfig.replace(
@@ -63,12 +83,16 @@ try {
     writeFileSync(configPath, originalConfig);
 }
 
+// ─── Lanzar Vite + Emuladores ─────────────────────────────────────────────────
 console.log('⚡ Starting Vite Server & Firebase Emulators...');
 
 const env = {
     ...process.env,
     VITE_FIREBASE_EMULATOR_HOST: ip,
-    VITE_USE_FIREBASE_EMULATOR: 'true'
+    VITE_USE_FIREBASE_EMULATOR: 'true',
+    VITE_PROJECT_TYPE: projectType,
+    // Forzar Java 21 para Firebase Tools (instalado vía Homebrew)
+    JAVA_HOME: '/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home'
 };
 
 const vite = spawn('npx', ['vite', '--host'], {
@@ -76,14 +100,17 @@ const vite = spawn('npx', ['vite', '--host'], {
     env
 });
 
+// Solo lanzar emuladores (modo Plugin: sin acceso a producción firebase)
 const emulators = spawn('npx', [
     'firebase',
     'emulators:start',
-    '--project', PROJECT_ID,
+    '--project', emulatorProject,
+    '--only', emulatorsToStart.join(','),
     '--import=' + emulatorDataPath,
     '--export-on-exit'
 ], {
-    stdio: 'inherit'
+    stdio: 'inherit',
+    env // <-- Asegurar que los emuladores reciban la variable JAVA_HOME
 });
 
 vite.on('close', () => {
@@ -98,6 +125,5 @@ emulators.on('close', (code) => {
 process.on('SIGINT', () => {
     console.log('\n🛑 Shutting down development environment...');
     vite.kill();
-    // In inherit mode, emulators receive SIGINT from the terminal too.
-    // We just need to make sure we don't call process.exit(0) before they're done.
+    if (!emulators.killed) emulators.kill('SIGINT');
 });

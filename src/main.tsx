@@ -5,8 +5,12 @@ import './i18n/config'
 import App from './App.tsx'
 import StockpileControlPlugin from './plugin';
 import { MockSecureContext, isStandalone } from './services/sdk-mock';
+import { idbStorage } from './utils/indexedDB';
 
 import { enableOfflinePersistence } from './config/firebase.config';
+
+// Backup defensivo de índice de activos al arrancar (protege contra pérdida de datos por WebView)
+idbStorage.refreshBackupIndex().catch(() => {});
 
 // Inicialización automática para Standalone/Dev
 if (isStandalone()) {
