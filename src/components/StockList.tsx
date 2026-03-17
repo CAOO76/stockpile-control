@@ -52,7 +52,7 @@ export const StockList: React.FC<StockListProps> = ({ onSelectAsset, onBack }) =
             {/* Header STITCH */}
             <header className="pt-14 pb-4 px-6 border-b border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between z-50">
                 <div className="flex flex-col">
-                    <h1 className="text-[9px] font-bold tracking-[0.4em] uppercase text-white/30">GESTIÓN</h1>
+                    <h1 className="text-[10px] font-bold tracking-[0.4em] uppercase text-white/30">GESTIÓN</h1>
                     <h2 className="text-lg font-bold tracking-tight text-white/90">Inventario Stock</h2>
                 </div>
                 <button
@@ -102,7 +102,7 @@ export const StockList: React.FC<StockListProps> = ({ onSelectAsset, onBack }) =
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-0.5">
                                         <h3 className="text-sm font-bold tracking-tight text-white/90 truncate uppercase">{asset.name}</h3>
-                                        <span className={`text-[8px] font-black uppercase tracking-widest ${getClaseColor(asset.clase || '')}`}>
+                                        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${getClaseColor(asset.clase || '')}`}>
                                             {(asset.clase || '').replace('_', ' ')}
                                         </span>
                                     </div>
@@ -116,7 +116,7 @@ export const StockList: React.FC<StockListProps> = ({ onSelectAsset, onBack }) =
                                     <span className="material-symbols-outlined text-primary/40 text-lg">chevron_right</span>
                                     {asset.last_volume_m3 && (
                                         <div className="flex items-center gap-1 bg-primary/10 px-1.5 py-0.5 rounded-none border border-primary/5">
-                                            <span className="text-[8px] font-black text-primary">{asset.last_volume_m3.toFixed(0)}m³</span>
+                                            <span className="text-[10px] font-black tracking-widest text-primary uppercase">{asset.last_volume_m3.toFixed(0)}m³</span>
                                         </div>
                                     )}
                                 </div>
@@ -128,7 +128,7 @@ export const StockList: React.FC<StockListProps> = ({ onSelectAsset, onBack }) =
 
             {/* Industrial Footer HUD */}
             <footer className="p-6 bg-gradient-to-t from-black to-transparent flex justify-between items-center">
-                <span className="text-[8px] font-black tracking-[0.4em] text-white/10 uppercase">Total: {assets.length} activos</span>
+                <span className="text-[10px] font-black tracking-[0.4em] text-white/10 uppercase">Total: {assets.length} activos</span>
                 <div className="flex gap-2">
                     <div className="w-1 h-1 rounded-none bg-green-500/40 animate-pulse"></div>
                     <div className="w-1 h-1 rounded-none bg-white/5"></div>

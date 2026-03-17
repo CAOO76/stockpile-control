@@ -81,7 +81,7 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                             alt=""
                         />
                         <div className="absolute bottom-2 left-3 z-10 shadow-sm">
-                            <span className="text-[8px] font-black text-white uppercase tracking-[0.2em] bg-antigravity-accent px-2 py-0.5">VISTA_TERRENO</span>
+                            <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] bg-antigravity-accent px-2 py-0.5">VISTA_TERRENO</span>
                         </div>
                     </div>
                     <div className="relative overflow-hidden group bg-black">
@@ -93,11 +93,11 @@ export const MeasurementDetail: React.FC<MeasurementDetailProps> = ({ measuremen
                             />
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900/50">
-                                <span className="text-[8px] font-mono opacity-20 text-white">GPS_OFFLINE</span>
+                                <span className="text-[10px] font-mono opacity-20 text-white">GPS_OFFLINE</span>
                             </div>
                         )}
                         <div className="absolute bottom-2 right-3 z-10 text-right shadow-sm">
-                            <span className="text-[8px] font-black text-white uppercase tracking-[0.2em] bg-antigravity-accent px-2 py-0.5">GEORREFERENCIA</span>
+                            <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] bg-antigravity-accent px-2 py-0.5">GEORREFERENCIA</span>
                         </div>
                     </div>
                 </div>

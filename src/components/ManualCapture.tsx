@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { calculationEngine } from '../services/calculation-engine';
 import { dataService } from '../services/DataService';
 import { storageService } from '../services/StorageService';
@@ -15,18 +16,8 @@ interface ManualCaptureProps {
     hidePhoto?: boolean; // true cuando viene del wizard (usa foto del activo)
 }
 
-const GEOMETRY_NAMES: Record<string, string> = {
-    'CONO_ELIPTICO': 'CONO ELÍPTICO',
-    'CONO_ELIPTICO_TRUNCADO': 'CONO ELÍPTICO TRUNCADO',
-    'CONO_TRUNCADO_PERIMETRO': 'CONO ELÍPTICO TRUNCADO POR PERÍMETRO'
-};
-
-/**
- * ManualCapture - VERSIÓN ULTRA-MINIMALISTA
- * Solución: Sin footer fijo para evitar solapamientos. 
- * Inputs masivos y limpios para máxima compatibilidad táctil.
- */
 export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGeometry, onSuccess, onBack, hidePhoto = false }) => {
+    const { t } = useTranslation();
     const [geometria] = useState<GeometryType>(initialGeometry);
     const [dimensions, setDimensions] = useState({ a: '', b: '', h: '', ap: '', bp: '', p: '', pp: '' });
     const [density, setDensity] = useState('');
@@ -56,7 +47,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                 saveToGallery: false
             });
             if (image.dataUrl) {
-                const optimized = await compressImage(image.dataUrl, 1024, 0.7);
+                const optimized = await compressImage(image.dataUrl, { profile: 'evidence' });
                 setPhoto(optimized);
             }
         } catch (err) { console.warn('[ManualCapture] Camera Canceled'); }
@@ -85,7 +76,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
     const handleSave = async () => {
         if (isSaving || liveEstimation <= 0) return;
         if (!hidePhoto && !photo) {
-            alert('Capturar foto de evidencia es obligatorio');
+            alert(t('manual_capture.required_photo_alert'));
             return;
         }
         setIsSaving(true);
@@ -132,7 +123,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
             onSuccess(measurementId);
         } catch (error: any) {
             console.error('[ManualCapture] Error:', error);
-            alert(`Error al guardar: ${error.message || 'Falla de conexión'}`);
+            alert(`${t('manual_capture.save_error')}: ${error.message || 'Falla de conexión'}`);
         } finally {
             setIsSaving(false);
         }
@@ -148,9 +139,9 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                         <span className="material-symbols-outlined text-3xl text-antigravity-accent font-bold">arrow_back</span>
                     </button>
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-antigravity-light-text/40 dark:text-antigravity-dark-text/20">MEDICIÓN</span>
+                        <span className="text-[10px] font-black tracking-[0.4em] uppercase text-antigravity-light-text/40 dark:text-antigravity-dark-text/20">{t('manual_capture.measurement_label')}</span>
                         <span className="text-xl font-black tracking-tight text-antigravity-light-text dark:text-antigravity-dark-text/90 uppercase">
-                            {GEOMETRY_NAMES[geometria] || geometria.replace(/_/g, ' ')}
+                            {t(`geometries.${geometria}`)}
                         </span>
                     </div>
                 </div>
@@ -169,7 +160,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                     {/* Captura de Evidencia Fotográfica — solo si no viene del wizard */}
                     {!hidePhoto && (
                     <div className="space-y-4">
-                        <span className="text-[10px] font-black tracking-[0.4em] text-antigravity-light-text/40 dark:text-antigravity-dark-text/20 uppercase">EVIDENCIA TÉCNICA</span>
+                        <span className="text-[10px] font-black tracking-[0.4em] text-antigravity-light-text/40 dark:text-antigravity-dark-text/20 uppercase">{t('manual_capture.evidence_title')}</span>
                         <div
                             onClick={takePhoto}
                             className={`relative w-full aspect-video rounded-none border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center
@@ -181,7 +172,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                                     <div className="absolute bottom-4 left-4 flex items-center gap-2">
                                         <span className="material-symbols-outlined text-antigravity-accent text-xl">check_circle</span>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">CAPTURA OK</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white">{t('manual_capture.success_message')}</span>
                                     </div>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
@@ -193,7 +184,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                             ) : (
                                 <>
                                     <span className="material-symbols-outlined text-5xl text-white/10 mb-2 font-light">add_a_photo</span>
-                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">TOUCH PARA CAPTURAR</span>
+                                    <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{t('manual_capture.tap_to_capture')}</span>
                                 </>
                             )}
                         </div>
@@ -204,31 +195,31 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                     <div className="grid grid-cols-1 gap-10">
                         {geometria === 'CONO_ELIPTICO' && (
                             <>
-                                <Field label="EJE MAYOR BASE (m)" value={dimensions.a} onChange={(v) => setDimensions({ ...dimensions, a: v })} />
-                                <Field label="EJE MENOR BASE (m)" value={dimensions.b} onChange={(v) => setDimensions({ ...dimensions, b: v })} />
+                                <Field label={t('manual_capture.fields.major_axis_base')} value={dimensions.a} onChange={(v) => setDimensions({ ...dimensions, a: v })} />
+                                <Field label={t('manual_capture.fields.minor_axis_base')} value={dimensions.b} onChange={(v) => setDimensions({ ...dimensions, b: v })} />
                             </>
                         )}
                         {geometria === 'CONO_ELIPTICO_TRUNCADO' && (
                             <>
-                                <Field label="EJE MAYOR BASE (m)" value={dimensions.a} onChange={(v) => setDimensions({ ...dimensions, a: v })} />
-                                <Field label="EJE MENOR BASE (m)" value={dimensions.b} onChange={(v) => setDimensions({ ...dimensions, b: v })} />
-                                <Field label="EJE MAYOR SUPERIOR (m)" value={dimensions.ap} onChange={(v) => setDimensions({ ...dimensions, ap: v })} />
-                                <Field label="EJE MENOR SUPERIOR (m)" value={dimensions.bp} onChange={(v) => setDimensions({ ...dimensions, bp: v })} />
+                                <Field label={t('manual_capture.fields.major_axis_base')} value={dimensions.a} onChange={(v) => setDimensions({ ...dimensions, a: v })} />
+                                <Field label={t('manual_capture.fields.minor_axis_base')} value={dimensions.b} onChange={(v) => setDimensions({ ...dimensions, b: v })} />
+                                <Field label={t('manual_capture.fields.major_axis_top')} value={dimensions.ap} onChange={(v) => setDimensions({ ...dimensions, ap: v })} />
+                                <Field label={t('manual_capture.fields.minor_axis_top')} value={dimensions.bp} onChange={(v) => setDimensions({ ...dimensions, bp: v })} />
                             </>
                         )}
                         {geometria === 'CONO_TRUNCADO_PERIMETRO' && (
                             <>
-                                <Field label="PERÍMETRO BASE (m)" value={dimensions.p} onChange={(v) => setDimensions({ ...dimensions, p: v })} />
-                                <Field label="PERÍMETRO SUPERIOR (m)" value={dimensions.pp} onChange={(v) => setDimensions({ ...dimensions, pp: v })} />
+                                <Field label={t('manual_capture.fields.perimeter_base')} value={dimensions.p} onChange={(v) => setDimensions({ ...dimensions, p: v })} />
+                                <Field label={t('manual_capture.fields.perimeter_top')} value={dimensions.pp} onChange={(v) => setDimensions({ ...dimensions, pp: v })} />
                             </>
                         )}
-                        <Field label="ALTURA TOTAL (m)" value={dimensions.h} onChange={(v) => setDimensions({ ...dimensions, h: v })} />
-                        <Field label="FACTOR DENSIDAD (T/m3)" value={density} onChange={setDensity} />
+                        <Field label={t('manual_capture.fields.total_height')} value={dimensions.h} onChange={(v) => setDimensions({ ...dimensions, h: v })} />
+                        <Field label={t('manual_capture.fields.density_factor')} value={density} onChange={setDensity} />
                     </div>
 
                     {/* Dashboard de Resultados en Vivo */}
                     <div className="bg-antigravity-light-surface dark:bg-antigravity-dark-surface border border-antigravity-light-border dark:border-antigravity-dark-border rounded-none p-8 flex flex-col items-center gap-2 transition-colors">
-                        <span className="text-[11px] font-black text-antigravity-light-text/30 dark:text-antigravity-dark-text/30 tracking-[0.4em] uppercase">VOLUMEN ESTIMADO</span>
+                        <span className="text-[11px] font-black text-antigravity-light-text/30 dark:text-antigravity-dark-text/30 tracking-[0.4em] uppercase">{t('manual_capture.estimated_volume')}</span>
                         <div className="flex items-baseline gap-3">
                             <span className="text-6xl font-black text-antigravity-accent tracking-tighter">
                                 {liveEstimation.toFixed(1)}
@@ -253,7 +244,7 @@ export const ManualCapture: React.FC<ManualCaptureProps> = ({ assetId, initialGe
                             ) : (
                                 <>
                                     <span className="material-symbols-outlined text-4xl">measuring_tape</span>
-                                    <span className="text-xl tracking-tight">GUARDAR MEDICIÓN</span>
+                                    <span className="text-xl tracking-tight">{t('manual_capture.save_measurement')}</span>
                                 </>
                             )}
                         </button>
@@ -283,6 +274,7 @@ const Field: React.FC<{ label: string, value: string, onChange: (v: string) => v
                 className="w-full bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-2 border-[#9ca3af] dark:border-antigravity-dark-border rounded-none h-16 px-6 text-3xl font-black text-antigravity-light-text dark:text-antigravity-dark-text outline-none focus:border-antigravity-accent transition-all text-center tracking-tight"
                 placeholder=" "
                 autoComplete="off"
+                spellCheck="false"
             />
         </div>
     </div>

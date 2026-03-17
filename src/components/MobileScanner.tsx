@@ -118,9 +118,9 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                 saveToGallery: false
             });
             if (image.dataUrl) {
-                const optimized = await compressImage(image.dataUrl, 1024, 0.7);
+                const optimized = await compressImage(image.dataUrl, { profile: 'evidence' });
                 setPhoto(optimized);
-                console.log('[Scanner] Foto de referencia capturada y optimizada');
+                console.log('[Scanner] Foto de referencia capturada y optimizada (WEBP)');
             }
         } catch (err) {
             console.warn('[Scanner] Captura cancelada:', err);
@@ -147,7 +147,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                 saveToGallery: false
             });
             if (image.dataUrl) {
-                const optimized = await compressImage(image.dataUrl, 800, 0.6); // Mas agresivo para escaneo multi-foto
+                const optimized = await compressImage(image.dataUrl, { profile: 'scan' });
                 // Guardar foto con datos IMU del momento
                 const newPhoto = {
                     dataUrl: optimized,
@@ -407,7 +407,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                         <span className="material-symbols-outlined text-2xl text-antigravity-light-text/40 dark:text-white/40">photo_library</span>
                                         <div className="flex flex-col">
                                             <span className="text-xs font-black text-antigravity-light-text/70 dark:text-white/60">PROGRESO DEL ESCANEO</span>
-                                            <span className={`text-[9px] font-black uppercase ${scanPhotos.length >= targetPhotoCount ? 'text-antigravity-accent dark:text-primary' : 'text-antigravity-light-text/30 dark:text-white/30'}`}>
+                                            <span className={`text-[10px] font-black uppercase ${scanPhotos.length >= targetPhotoCount ? 'text-antigravity-accent dark:text-primary' : 'text-antigravity-light-text/30 dark:text-white/30'}`}>
                                                 {scanPhotos.length} / {targetPhotoCount} FOTOS
                                             </span>
                                         </div>
@@ -476,7 +476,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                 <span className="material-symbols-outlined text-3xl text-green-600 dark:text-primary">check_circle</span>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-black text-green-700 dark:text-primary">ESCANEO COMPLETADO</span>
-                                    <span className="text-[9px] text-green-600/60 dark:text-primary/60">{scanPhotos.length} fotos capturadas con datos IMU</span>
+                                    <span className="text-[10px] text-green-600/60 dark:text-primary/60">{scanPhotos.length} fotos capturadas con datos IMU</span>
                                 </div>
                             </div>
 
@@ -527,7 +527,7 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({ assetId, onSuccess
                                     <span className="text-6xl font-black text-antigravity-light-text/10 dark:text-white/20 tracking-tighter">0.0</span>
                                     <span className="text-lg font-black text-antigravity-light-text/10 dark:text-white/10 uppercase">m³</span>
                                 </div>
-                                <span className="text-[9px] text-antigravity-light-text/30 dark:text-white/20 uppercase tracking-widest">La IA calculará el volumen</span>
+                                <span className="text-[10px] text-antigravity-light-text/30 dark:text-white/20 uppercase tracking-widest">La IA calculará el volumen</span>
                             </div>
                         </div>
                     )}

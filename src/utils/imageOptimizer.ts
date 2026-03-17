@@ -4,18 +4,50 @@
  */
 
 /**
- * Compresses and resizes an image.
+ * Perfiles de optimización dictados por EDGE-OPTIMIZER
+ */
+export type ImageProfile = 'evidence' | 'scan' | 'thumbnail' | 'custom';
+
+interface CompressionOptions {
+    profile?: ImageProfile;
+    maxWidth?: number;
+    quality?: number;
+}
+
+const PROFILE_SETTINGS: Record<ImageProfile, { maxWidth: number; quality: number }> = {
+    evidence: { maxWidth: 1024, quality: 0.70 },
+    scan: { maxWidth: 800, quality: 0.60 },
+    thumbnail: { maxWidth: 400, quality: 0.50 },
+    custom: { maxWidth: 1024, quality: 0.70 } // Defaults
+};
+
+/**
+ * Compresses and resizes an image to WEBP format.
  * 
  * @param fileOrBase64 - The input image as a File object or base64 DataURL.
- * @param maxWidth - Maximum width for the output image. Defaults to 1024px.
- * @param quality - JPEG compression quality (0 to 1). Defaults to 0.7.
- * @returns A promise that resolves to the compressed image as a base64 DataURL.
+ * @param options - Profile or custom settings. Defaults to 'evidence' profile.
+ * @returns A promise that resolves to the compressed image as a WEBP base64 DataURL.
  */
 export const compressImage = async (
     fileOrBase64: File | string,
-    maxWidth = 1024,
-    quality = 0.7
+    options: CompressionOptions | number = { profile: 'evidence' },
+    oldQuality?: number // for backwards compatibility if needed
 ): Promise<string> => {
+    
+    // Resolve settings based on profile or custom inputs
+    let settings = PROFILE_SETTINGS.evidence;
+    if (typeof options === 'number') {
+        // Backwards compatibility for old calls: compressImage(file, maxWidth, quality)
+        settings = { maxWidth: options, quality: oldQuality || 0.7 };
+    } else if (options.profile && options.profile !== 'custom') {
+        settings = PROFILE_SETTINGS[options.profile];
+    } else {
+        settings = {
+            maxWidth: options.maxWidth || PROFILE_SETTINGS.evidence.maxWidth,
+            quality: options.quality ?? PROFILE_SETTINGS.evidence.quality
+        };
+    }
+
     return new Promise((resolve, reject) => {
         const img = new Image();
         let objectUrl: string | null = null;
@@ -30,9 +62,9 @@ export const compressImage = async (
             let { width, height } = img;
 
             // Logic: Maintain aspect ratio and strictly avoid upscaling
-            if (width > maxWidth) {
-                const ratio = maxWidth / width;
-                width = maxWidth;
+            if (width > settings.maxWidth) {
+                const ratio = settings.maxWidth / width;
+                width = settings.maxWidth;
                 height = Math.round(height * ratio);
             }
 
@@ -51,8 +83,8 @@ export const compressImage = async (
             
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Export as JPEG with specified quality
-            const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+            // Export as WEBP with specified quality for maximum EDGE resilience
+            const compressedBase64 = canvas.toDataURL('image/webp', settings.quality);
             
             // Explicitly clear references for GC
             canvas.width = 0;

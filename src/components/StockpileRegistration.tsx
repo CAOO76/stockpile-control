@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { dataService } from '../services/DataService';
 import { storageService } from '../services/StorageService';
 import { M3TextField } from './M3TextField';
@@ -36,6 +37,7 @@ const HEADER_TITLE: Record<RegStep, string> = {
 };
 
 export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ onSuccess, onCancel }) => {
+    const { t } = useTranslation();
     // --- Paso 1: Datos del activo ---
     const [name, setName] = useState('');
     const [clase, setClase] = useState<'mineral' | 'esteril' | 'baja_ley'>('mineral');
@@ -66,7 +68,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                 source: CameraSource.Camera, correctOrientation: true, saveToGallery: false
             });
             if (image.dataUrl) {
-                const optimized = await compressImage(image.dataUrl, 1024, 0.7);
+                const optimized = await compressImage(image.dataUrl, { profile: 'evidence' });
                 setAssetPhoto(optimized);
             }
         } catch { /* canceled */ }
@@ -131,26 +133,31 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                                     <div className="grid grid-cols-3 gap-2">
                                         {(['mineral', 'esteril', 'baja_ley'] as const).map(c => (
                                             <button key={c} onClick={() => setClase(c)} className={`h-10 text-[9px] font-black uppercase tracking-wider border transition-all ${clase === c ? 'bg-antigravity-accent text-white border-antigravity-accent' : 'bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-antigravity-light-border dark:border-antigravity-dark-border opacity-50'}`}>
-                                                {c === 'mineral' ? 'Mineral' : c === 'esteril' ? 'Estéril' : 'Baja Ley'}
+                                                {c === 'mineral' ? t('material_type.mineral') : c === 'esteril' ? t('material_type.esteril') : t('material_type.baja_ley')}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
-                                <M3TextField label="REFERENCIA UBICACIÓN" value={locationRef} onChange={setLocationRef} autoComplete="off" />
+                                <Field
+                                    label={t('registration.location_ref_label')}
+                                    placeholder={t('registration.location_ref_placeholder')}
+                                    value={locationRef}
+                                    onChange={setLocationRef}
+                                />
                             </div>
 
                             <div className="space-y-2">
-                                <p className="text-[8px] font-black uppercase tracking-[0.3em] text-antigravity-accent">Foto de Portada</p>
+                                <p className="text-[8px] font-black uppercase tracking-[0.3em] text-antigravity-accent">{t('registration.cover_photo_title')}</p>
                                 <div onClick={takeAssetPhoto} className="relative w-full aspect-video bg-antigravity-light-surface dark:bg-antigravity-dark-surface border-2 border-dashed border-antigravity-light-border dark:border-antigravity-dark-border flex flex-col items-center justify-center overflow-hidden active:border-antigravity-accent transition-colors">
                                     {assetPhoto
-                                        ? <><img src={assetPhoto} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/20" /><span className="absolute bottom-2 left-3 text-[9px] font-black uppercase tracking-widest text-white bg-green-600 px-2 py-0.5">✓ CAPTURADO</span></>
-                                        : <><span className="material-symbols-outlined text-3xl opacity-10 mb-1">add_a_photo</span><span className="text-[9px] font-black uppercase tracking-widest opacity-20">TOCA PARA CAPTURAR</span></>
+                                        ? <><img src={assetPhoto} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-black/20" /><span className="absolute bottom-2 left-3 text-[9px] font-black uppercase tracking-widest text-white bg-green-600 px-2 py-0.5">✓ {t('registration.captured_label')}</span></>
+                                        : <><span className="material-symbols-outlined text-3xl opacity-10 mb-1">add_a_photo</span><span className="text-[9px] font-black uppercase tracking-widest opacity-20">{t('registration.tap_to_capture_label')}</span></>
                                     }
                                 </div>
                             </div>
 
                             <button disabled={!name || !locationRef || !assetPhoto} onClick={() => setStep('METHOD')} className="w-full h-14 bg-antigravity-accent text-white font-black text-sm uppercase tracking-widest disabled:opacity-20 active:scale-95 transition-all">
-                                CONTINUAR →
+                                {t('common.continue_button')} →
                             </button>
                         </motion.div>
                     )}
@@ -177,7 +184,7 @@ export const StockpileRegistration: React.FC<StockpileRegistrationProps> = ({ on
                             {isCreatingAsset && (
                                 <div className="absolute inset-0 bg-antigravity-dark-bg/80 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-50">
                                     <span className="material-symbols-outlined text-5xl text-antigravity-accent animate-spin">sync</span>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Registrando activo…</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/60">{t('registration.registering_asset_message')}</p>
                                 </div>
                             )}
                         </div>

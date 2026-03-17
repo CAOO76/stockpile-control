@@ -110,7 +110,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                     <span className="material-symbols-outlined text-3xl text-antigravity-accent">arrow_back</span>
                 </button>
                 <div className="flex flex-col items-center">
-                    <h1 className="text-[9px] font-bold tracking-[0.4em] uppercase text-antigravity-light-text/50 dark:text-antigravity-dark-text/20">ACTIVO</h1>
+                    <h1 className="text-[10px] font-bold tracking-[0.4em] uppercase text-antigravity-light-text/50 dark:text-antigravity-dark-text/20">ACTIVO</h1>
                     <span className="text-sm font-black tracking-widest uppercase text-antigravity-light-text dark:text-antigravity-dark-text/90">{asset.name}</span>
                 </div>
                 <div className="flex gap-2">
@@ -148,7 +148,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                         className={`absolute top-4 right-4 z-20 px-3 py-2 rounded-none backdrop-blur-md border flex items-center gap-2 transition-all active:scale-95 ${showOriginal ? 'bg-primary border-primary text-black' : 'bg-black/40 border-white/10 text-white/60'}`}
                     >
                         <span className="material-symbols-outlined text-lg">history</span>
-                        <span className="text-[9px] font-black uppercase tracking-widest">{showOriginal ? 'Viendo Original' : 'Ver Original'}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">{showOriginal ? 'Viendo Original' : 'Ver Original'}</span>
                     </button>
 
                     <div className="absolute inset-0 bg-gradient-to-t from-antigravity-light-bg dark:from-antigravity-dark-bg via-transparent to-transparent pointer-events-none"></div>
@@ -156,7 +156,7 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                     {/* Status Badge in Hero */}
                     {!showOriginal && (
                         <div className="absolute bottom-10 left-6">
-                            <span className="text-[8px] font-black uppercase tracking-[.4em] text-antigravity-light-text/60 dark:text-antigravity-dark-text/30 block mb-1">
+                            <span className="text-[10px] font-black uppercase tracking-[.4em] text-antigravity-light-text/60 dark:text-antigravity-dark-text/30 block mb-1">
                                 {asset.last_measured_at ? 'ÚLTIMO ESTADO TÉCNICO' : 'FICHA DE ALTA (HD)'}
                             </span>
                         </div>
@@ -238,8 +238,8 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                 <>
                                     <div className="flex flex-col gap-1 px-1">
                                         <div className="flex justify-between items-end">
-                                            <span className="text-[9px] font-bold text-antigravity-accent italic uppercase tracking-widest">LOCALIZACIÓN SATELITAL (ÚLTIMA MEDICIÓN)</span>
-                                            <span className="text-[9px] font-bold text-antigravity-light-text/60 dark:text-antigravity-dark-text/20 italic">±{lastM.location_metadata.accuracy.toFixed(1)}m</span>
+                                            <span className="text-[10px] font-bold text-antigravity-accent italic uppercase tracking-widest">LOCALIZACIÓN SATELITAL (ÚLTIMA MEDICIÓN)</span>
+                                            <span className="text-[10px] font-bold text-antigravity-light-text/60 dark:text-antigravity-dark-text/20 italic">±{lastM.location_metadata.accuracy.toFixed(1)}m</span>
                                         </div>
                                         <p className="text-xs font-black text-antigravity-light-text/80 dark:text-antigravity-dark-text/40 font-mono tracking-tighter">
                                             {lastM.location_metadata.lat.toFixed(6)} / {lastM.location_metadata.lng.toFixed(6)}
@@ -278,8 +278,8 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                     {/* History Selection */}
                     <div className="space-y-4 pt-2">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-[9px] font-bold uppercase tracking-[0.3em] text-antigravity-light-text/40 dark:text-white/20">HISTORIAL</h3>
-                            <M3Chip label={history.length.toString()} className="h-4 px-2 text-[8px] bg-antigravity-light-surface dark:bg-white/5 border-antigravity-light-border dark:border-white/5 font-black" />
+                            <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-antigravity-light-text/40 dark:text-white/20">HISTORIAL</h3>
+                            <M3Chip label={history.length.toString()} className="h-4 px-2 text-[10px] bg-antigravity-light-surface dark:bg-white/5 border-antigravity-light-border dark:border-white/5 font-black" />
                         </div>
 
                         <div className="grid grid-cols-1 gap-2">
@@ -301,9 +301,9 @@ export const StockpileDashboard: React.FC<StockpileDashboardProps> = ({ assetId,
                                         </div>
                                         <div className="flex items-center gap-2 mt-0.5">
                                             {m.ignored ? (
-                                                <span className="text-[8px] font-black text-red-600 dark:text-red-500 uppercase tracking-widest bg-red-100 dark:bg-red-500/10 px-1.5 py-0.5 rounded">IGNORADO</span>
+                                                <span className="text-[10px] font-black text-red-600 dark:text-red-500 uppercase tracking-widest bg-red-100 dark:bg-red-500/10 px-1.5 py-0.5 rounded">IGNORADO</span>
                                             ) : (
-                                                <span className="text-[9px] font-bold text-antigravity-light-text/60 dark:text-antigravity-dark-text/15 uppercase tracking-widest">
+                                                <span className="text-[10px] font-bold text-antigravity-light-text/60 dark:text-antigravity-dark-text/15 uppercase tracking-widest">
                                                     {m.method}
                                                 </span>
                                             )}

@@ -48,7 +48,7 @@ export const M3TextField: React.FC<M3TextFieldProps> = ({
                     placeholder={placeholder || ' '}
                     required={required}
                     disabled={disabled}
-                    autoComplete={autoComplete || 'off'}
+                    autoComplete="off"
                     aria-label={label}
                     aria-invalid={hasError}
                 />
